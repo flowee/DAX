@@ -1,0 +1,25 @@
+Selected Months = 
+var _numbers = VALUES ( Dates[Month Number] )
+var _names = VALUES ( Dates[Month Short] )
+RETURN SUBSTITUTE(
+    CONCATENATEX (
+        _names,
+        var thisMonthName = Dates[Month Short]
+        var thisMonthNumber = CALCULATE ( MAXA ( Dates[Month Number] ), FILTER(Dates, Dates[Month Short] = thisMonthName ) )
+        var _previousMonthsNumber = thisMonthNumber - 1
+        var _nextMonthsNumber = thisMonthNumber + 1
+        var _monthToShow = IF ( 
+            NOT _previousMonthsNumber IN _numbers,
+            ", " & thisMonthName,
+            IF ( 
+                _nextMonthsNumber IN _numbers,
+                "", 
+                "-" & thisMonthName
+            )
+        )   
+        return _monthToShow
+    ),
+    ", ",
+    "",
+    1
+)
