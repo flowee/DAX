@@ -4,17 +4,17 @@ var _names = VALUES ( Dates[Month Short] )
 RETURN SUBSTITUTE(
     CONCATENATEX (
         _names,
-        var thisMonthName = Dates[Month Short]
-        var thisMonthNumber = CALCULATE ( MAXA ( Dates[Month Number] ), FILTER(Dates, Dates[Month Short] = thisMonthName ) )
-        var _previousMonthsNumber = thisMonthNumber - 1
-        var _nextMonthsNumber = thisMonthNumber + 1
+        var _thisMonthName = Dates[Month Short]
+        var _thisMonthNumber = CALCULATE ( MAXA ( Dates[Month Number] ), FILTER(Dates, Dates[Month Short] = _thisMonthName ) )
+        var _previousMonthsNumber = _thisMonthNumber - 1
+        var _nextMonthsNumber = _thisMonthNumber + 1
         var _monthToShow = IF ( 
             NOT _previousMonthsNumber IN _numbers,
-            ", " & thisMonthName,
+            ", " & _thisMonthName,
             IF ( 
                 _nextMonthsNumber IN _numbers,
                 "", 
-                "-" & thisMonthName
+                "-" & _thisMonthName
             )
         )   
         return _monthToShow
