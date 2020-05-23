@@ -1,0 +1,11 @@
+Dates = 
+ADDCOLUMNS (
+    CALENDAR ( DATE ( 2020,1,1 ), DATE ( 2020,12,31 ) ),
+    "Year", YEAR ( [Date] ),
+    "Quarter", "Q" & QUARTER ( [Date] ),
+    "Quarter Number", QUARTER( [Date] ),
+    "Month", FORMAT ( [Date], "mmmm" ),
+    "Month Short", FORMAT ( [Date], "mmm" ),
+    "Month Number", MONTH ( [Date] ),
+    "Weekday", FORMAT ( [Date],"dddd" )
+)
