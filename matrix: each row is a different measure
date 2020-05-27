@@ -1,0 +1,16 @@
+Metric Average = //returns average (for selected months) value of a selected metric (mesure)
+var _months_selected = COUNTROWS ( VALUES ( 'Date'[Month] ) )
+var _result = SWITCH ( 
+    SELECTEDVALUE ( Metrics[Metric] ),
+    "Web Traffic", "-",
+    "Leads", "-",
+    "MQL", "-",
+    "Demo Scheduled",  FORMAT ( DIVIDE ( [# Demo Sched], _months_selected ) ,"#,##0" ),
+    "Demo Held", FORMAT ( DIVIDE ( [# Demo Held], _months_selected  ), "#,##0" ),
+    "SQL", FORMAT ( DIVIDE ( [# SQL], _months_selected), "#,##0" ),
+    "SQL Value", FORMAT ( DIVIDE ( [$ SQL], _months_selected), "$#,##0" ),
+    "WON", "-",
+    "WON Value", "-",
+    ""
+)
+RETURN _result
