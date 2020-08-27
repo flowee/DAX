@@ -1,11 +1,16 @@
 Calendar = 
 ADDCOLUMNS (
-    CALENDAR ( DATE ( 2020,1,1 ), DATE ( 2020,12,31 ) ),
-    "Year", YEAR ( [Date] ),
-    "Quarter", "Q" & QUARTER ( [Date] ),
-    "Quarter Number", QUARTER( [Date] ),
-    "Month", FORMAT ( [Date], "mmmm" ),
-    "Month Short", FORMAT ( [Date], "mmm" ),
-    "Month Number", MONTH ( [Date] ),
-    "Weekday", FORMAT ( [Date],"dddd" )
+    CALENDAR( MIN ( Visits[Date] ), MAX ( Visits[Date] ) ), //replace table name or use CALENDARAUTO
+    "Year", YEAR ( [Date] ), //2020
+    "Calendar Year", "CY" & FORMAT ( [Date], "yy" ), //CY2020
+    "Month Name Long", FORMAT ( [Date], "mmmm" ), //August
+    "Month Name Short Year", FORMAT ( [Date], "mmm'yy" ), //Aug'20
+    "Month Number", MONTH ( [Date] ), //8
+    "Week Number", WEEKNUM( [Date] , 2 ), //week begins on Monday
+    "Week Day Number", WEEKDAY( [Date], 2),
+    "Week Day Short", FORMAT ( [Date], "ddd"), //Tue
+    "Week Day Long", FORMAT ( [Date], "dddd"), //Tuesday
+    "Day", DAY( [Date] ),
+    "yyyyww", YEAR( [Date] ) * 100 + WEEKNUM( [Date], 2 ), //202035
+    "mmm dd", FORMAT ( [Date], "mmm dd" ) //Aug 27
 )
