@@ -1,2 +1,0 @@
-# DAX
-My DAX queries
