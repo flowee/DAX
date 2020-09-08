@@ -1,0 +1,6 @@
+//restore time from HHMMSS whole number
+TIME(
+        MID(CONVERT([Process Time],STRING),1,2),
+        MID(CONVERT([Process Time],STRING),3,2),
+        MID(CONVERT([Process Time],STRING),5,2)
+    )
