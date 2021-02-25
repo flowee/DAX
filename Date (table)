@@ -1,10 +1,11 @@
-Calendar = 
+Date = 
 ADDCOLUMNS (
-    CALENDAR( MIN ( Visits[Date] ), MAX ( Visits[Date] ) ), //replace table name or use CALENDARAUTO
+    CALENDAR( MIN ( Contribution[Date Received] ), MAX ( Contribution[Date Received] ) ),
     "Year", YEAR ( [Date] ), //2020
     "Calendar Year", "CY" & FORMAT ( [Date], "yy" ), //CY2020
     "Month Name Long", FORMAT ( [Date], "mmmm" ), //August
-    "Month Name Short Year", FORMAT ( [Date], "mmm'yy" ), //Aug'20
+    "Month Name Short", FORMAT ( [Date], "mmm" ), //Aug
+    "Month Name Short'Year", FORMAT ( [Date], "mmm'yy" ), //Aug'20
     "Month Number", MONTH ( [Date] ), //8
     "Week Number", WEEKNUM( [Date] , 2 ), //week begins on Monday
     "Week Day Number", WEEKDAY( [Date], 2),
