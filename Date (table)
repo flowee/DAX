@@ -1,17 +1,37 @@
-Date = 
-ADDCOLUMNS (
-    CALENDAR( MIN ( Contribution[Date Received] ), MAX ( Contribution[Date Received] ) ),
-    "Year", YEAR ( [Date] ), //2020
-    "Calendar Year", "CY" & FORMAT ( [Date], "yy" ), //CY2020
-    "Month Name Long", FORMAT ( [Date], "mmmm" ), //August
-    "Month Name Short", FORMAT ( [Date], "mmm" ), //Aug
-    "Month Name Short'Year", FORMAT ( [Date], "mmm'yy" ), //Aug'20
-    "Month Number", MONTH ( [Date] ), //8
-    "Week Number", WEEKNUM( [Date] , 2 ), //week begins on Monday
-    "Week Day Number", WEEKDAY( [Date], 2),
-    "Week Day Short", FORMAT ( [Date], "ddd"), //Tue
-    "Week Day Long", FORMAT ( [Date], "dddd"), //Tuesday
-    "Day", DAY( [Date] ),
-    "yyyyww", YEAR( [Date] ) * 100 + WEEKNUM( [Date], 2 ), //202035
-    "mmm dd", FORMAT ( [Date], "mmm dd" ) //Aug 27
-)
+Date =
+VAR _FiscalYearFirstMonth = 7
+RETURN
+    ADDCOLUMNS (
+        CALENDAR (
+            MIN ( Contribution[Date Received] ),
+            MAX ( Contribution[Date Received] )
+        ),
+        "Year", YEAR ( [Date] ),
+        "Calendar Year", "CY" & FORMAT ( [Date], "yy" ),
+        "Fiscal Year",
+            "FY"
+                & IF (
+                    MONTH ( [Date] ) < _FiscalYearFirstMonth,
+                    YEAR ( [Date] ) - 1,
+                    YEAR ( [DATE] )
+                ),
+        "Fiscal Month",
+            IF (
+                MONTH ( [Date] ) < _FiscalYearFirstMonth,
+                MONTH ( [Date] ) + _FiscalYearFirstMonth - 1,
+                MONTH ( [Date] ) - _FiscalYearFirstMonth + 1
+            ),
+        "Month Name Long", FORMAT ( [Date], "mmmm" ),
+        "Month Name Short", FORMAT ( [Date], "mmm" ),
+        "Month Name Short'Year", FORMAT ( [Date], "mmm'yy" ),
+        "Month Number", MONTH ( [Date] ),
+        "Week Number", WEEKNUM ( [Date], 2 ),
+        "Week Day Number", WEEKDAY ( [Date], 2 ),
+        "Week Day Short", FORMAT ( [Date], "ddd" ),
+        "Week Day Long", FORMAT ( [Date], "dddd" ),
+        "Day", DAY ( [Date] ),
+        "yyyyww",
+            YEAR ( [Date] ) * 100
+                + WEEKNUM ( [Date], 2 ),
+        "mmm dd", FORMAT ( [Date], "mmm dd" )
+    )
