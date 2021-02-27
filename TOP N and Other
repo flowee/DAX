@@ -3,6 +3,7 @@ VAR _group =
     SELECTEDVALUE ( 'FundOther'[Fund] )
 //top 10 Funds by number of new donors
 VAR _topN =
+SELECTCOLUMNS (
     TOPN (
         _N,
         ADDCOLUMNS (
@@ -10,7 +11,8 @@ VAR _topN =
             "@New Donors", [New Donors] + RAND ()
         ),
         [@New Donors], DESC
-    )
+    ),
+"C", [Fund] )
 //return number of donors for the selected fund if it's in _topN
 //return number of donors for all funds that are not in _topN if "Other Funds" selected
 VAR _result =
@@ -18,10 +20,10 @@ VAR _result =
         _group = "Other Funds",
         CALCULATE (
             [New Donors],
-            FILTER ( Fund, NOT ( Fund[Fund] IN SELECTCOLUMNS ( _topN, "C", [Fund] ) ) )
+            FILTER ( Fund, NOT ( Fund[Fund] IN _topN ) )
         ),
         IF (
-            _group IN SELECTCOLUMNS ( _topN, "C", [Fund] ),
+            _group IN _topN,
             CALCULATE ( [New Donors], FILTER ( Fund, Fund[Fund] = _group ) ),
             BLANK ()
         )
