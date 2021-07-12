@@ -1,37 +1,58 @@
-Date =
-VAR _FiscalYearFirstMonth = 7
-RETURN
+//Simple date table
+VAR _StartDate =
+    --first date
+    MIN ( 'Vaccinations'[Covid Vacc Date] )
+VAR _EndDate =
+    --last date
+    MAX ( 'Vaccinations'[Covid Vacc Date] )
+VAR _BaseCalendar =
+    CALENDAR ( _StartDate, _EndDate )
+VAR _FullCalendar =
     ADDCOLUMNS (
-        CALENDAR (
-            MIN ( Contribution[Date Received] ),
-            MAX ( Contribution[Date Received] )
-        ),
-        "Year", YEAR ( [Date] ),
+        _BaseCalendar,
+        //20210712 (number) - date key
+        "Date Key", VALUE ( FORMAT ( [Date], "yyyyMMdd" ) ),
+        //calendar year =============================================
+        --2021 (number)
+        "Year Number", YEAR ( [Date] ),
+        --2021 (string)
+        "Year", FORMAT ( [Date], "yyyy" ),
+        --CY21 (string)
         "Calendar Year", "CY" & FORMAT ( [Date], "yy" ),
-        "Fiscal Year",
-            "FY"
-                & IF (
-                    MONTH ( [Date] ) < _FiscalYearFirstMonth,
-                    YEAR ( [Date] ) - 1,
-                    YEAR ( [DATE] )
-                ),
-        "Fiscal Month",
-            IF (
-                MONTH ( [Date] ) < _FiscalYearFirstMonth,
-                MONTH ( [Date] ) + _FiscalYearFirstMonth - 1,
-                MONTH ( [Date] ) - _FiscalYearFirstMonth + 1
-            ),
-        "Month Name Long", FORMAT ( [Date], "mmmm" ),
-        "Month Name Short", FORMAT ( [Date], "mmm" ),
-        "Month Name Short'Year", FORMAT ( [Date], "mmm'yy" ),
+        //calendar month ============================================
+        --7 (number)
         "Month Number", MONTH ( [Date] ),
-        "Week Number", WEEKNUM ( [Date], 2 ),
-        "Week Day Number", WEEKDAY ( [Date], 2 ),
-        "Week Day Short", FORMAT ( [Date], "ddd" ),
-        "Week Day Long", FORMAT ( [Date], "dddd" ),
-        "Day", DAY ( [Date] ),
-        "yyyyww",
+        --July
+        "Month Long", FORMAT ( [Date], "mmmm" ),
+        --Jul
+        "Month Short", FORMAT ( [Date], "mmm" ),
+        --Jul'21
+        "Month Short'Year", FORMAT ( [Date], "mmm'yy" ),
+        //calendar week =============================================
+        --202128 (number)
+        "Year Week Order",
             YEAR ( [Date] ) * 100
                 + WEEKNUM ( [Date], 2 ),
-        "mmm dd", FORMAT ( [Date], "mmm dd" )
+        --28 (number)
+        "Week Number", WEEKNUM ( [Date], 2 ),
+        --W28
+        "Week W", "W" & WEEKNUM ( [Date], 2 ),
+        //week day ==================================================
+        --1 (number)
+        "Week Day Number", WEEKDAY ( [Date], 2 ),
+        --Mon
+        "Week Day Short", FORMAT ( [Date], "ddd" ),
+        --Monday
+        "Week Day Long", FORMAT ( [Date], "dddd" ),
+        //other =====================================================
+        --Jul 12
+        "Month Short and Date", FORMAT ( [Date], "mmm dd" ),
+        --12 (number)
+        "Day of Month", DAY ( [Date] ),
+        --193
+        "Day of Year", DATEDIFF ( DATE ( YEAR ( [Date] ), 1, 1 ), [Date], DAY ) + 1,
+        --43151 (number)
+        "Day Since 1900", VALUE ( [Date] )
     )
+RETURN
+    _FullCalendar
