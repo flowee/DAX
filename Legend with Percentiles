@@ -1,0 +1,28 @@
+//Test Result for Color Legend
+//Assign colors to Population Density
+//Ranges: 20th, 40th, 60th, 80th, 100th percentile
+//Returns 5 values to display in a table (min, 25th percentile, median, 75th percentile, max)
+VAR _Counties = FILTER ( 'Shape', 'Shape'[Type] = "County" )
+VAR _AllDensites =
+    ADDCOLUMNS ( _Counties, "@Density", [Population Density] )
+VAR _Min =
+    MINX ( _AllDensites, [@Density] )
+VAR _Max =
+    MAXX ( _AllDensites, [@Density] )
+VAR _Median =
+    MEDIANX ( _AllDensites, [@Density] )
+VAR _25 =
+    PERCENTILEX.INC ( _AllDensites, [@Density], 0.25 )
+VAR _75 =
+    PERCENTILEX.INC ( _AllDensites, [@Density], 0.75 )
+VAR _Result =
+    SWITCH (
+        SELECTEDVALUE ( 'Legend for Map'[Item] ),
+        1, _Max,
+        2, IF ( _75 = _Max, BLANK (), _75 ),
+        3, IF ( _Median = _75, BLANK (), _Median ),
+        4, IF ( _25 = _Median, BLANK (), _25 ),
+        5, IF ( _Min = _25, BLANK (), _Min )
+    )
+RETURN
+    _Result
