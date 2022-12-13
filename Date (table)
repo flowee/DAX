@@ -1,13 +1,13 @@
 //Date table
 // Configuration
-VAR _StartDate =
-    --first date
-    DATE ( 2021, 1, 1 )
-VAR _EndDate =
-    --last date
-    DATE ( 2022, 11, 31 )
+//VAR _StartDate =
+//    --first date
+//    DATE ( 2021, 1, 1 )
+//VAR _EndDate =
+//    --last date
+//    DATE ( 2022, 11, 31 )
 VAR _BaseCalendar =
-    CALENDAR ( _StartDate, _EndDate )
+    CALENDARAUTO ()
 VAR _FYOffset = 6
 VAR _ZeroLenSpace =
     UNICHAR ( 8203 ) //
@@ -16,7 +16,7 @@ VAR _FullCalendar =
     ADDCOLUMNS (
         _BaseCalendar,
         //20210712
-        "Date Key", VALUE ( FORMAT ( [Date], "yyyyMMdd" ) ),
+        "Date Key", INT ( VALUE ( FORMAT ( [Date], "yyyyMMdd" ) ) ),
         // year =============================================
         --2021
         "Year", YEAR ( [Date] ),
@@ -26,6 +26,9 @@ VAR _FullCalendar =
         "Calendar Year (CY)", "CY" & FORMAT ( [Date], "yy" ),
         --CY21
         "Fiscal Year (FY)", "FY" & FORMAT ( EOMONTH ( [Date], _FYOffset ), "yy" ),
+        // quarter ==========================================
+        --Qtr 1
+        "Quarter", QUARTER ( [Date] ),
         // month ============================================ 
         --7
         "Month", MONTH ( [Date] ),
@@ -65,7 +68,7 @@ VAR _FullCalendar =
         --193
         "Day of Year", DATEDIFF ( DATE ( YEAR ( [Date] ), 1, 1 ), [Date], DAY ) + 1,
         --43151 (number)
-        "Day Since 1900", VALUE ( [Date] ),
+        "Day Since 1900", INT ( VALUE ( [Date] ) ),
         //DATEDIFF ==================================================
         "Days From Now", DATEDIFF ( TODAY (), [Date], DAY ),
         "Weeks From Now", DATEDIFF ( TODAY (), [Date], WEEK ),
