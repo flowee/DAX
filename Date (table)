@@ -27,8 +27,12 @@ VAR _FullCalendar =
         --CY21
         "Fiscal Year (FY)", "FY" & FORMAT ( EOMONTH ( [Date], _FYOffset ), "yy" ),
         // quarter ==========================================
-        --Qtr 1
+        --1
         "Quarter", QUARTER ( [Date] ),
+        --Q1
+        "Quarter Q", "Q" & QUARTER ( [Date] ),
+        --Qtr 1
+        "Quarter Qtr", "Qtr " & QUARTER ( [Date] ),
         // month ============================================ 
         --7
         "Month", MONTH ( [Date] ),
