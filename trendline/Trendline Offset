@@ -1,0 +1,8 @@
+VAR _XAVg =
+    AVERAGEX ( ALLSELECTED ( 'Date'[Date] ), 'Date'[Date] )
+VAR _YAVg =
+    AVERAGEX ( ALLSELECTED ( 'Date'[Date] ), [Measure] )
+VAR _m = [Trendline Slope]
+VAR _Result = _YAVg - _m * _XAVg
+RETURN
+    _Result
