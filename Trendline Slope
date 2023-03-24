@@ -1,0 +1,23 @@
+Trendline Slope = 
+VAR _XAVg =
+    AVERAGEX ( ALLSELECTED ( 'Date'[Date] ), 'Date'[Date] )
+VAR _YAVg =
+    AVERAGEX ( ALLSELECTED ( 'Date'[Date] ), [Measure] )
+VAR _XY =
+    CALCULATETABLE (
+        ADDCOLUMNS (
+            ALLSELECTED ( 'Date'[Date] ),
+            "@XY",
+                ( 'Date'[Date] - _XAVg ) * ( [Measure] - _YAVg ),
+            "@X2",
+                ( 'Date'[Date] - _XAVg ) ^ 2
+        )
+    )
+VAR _XYSum =
+    SUMX ( _XY, [@XY] )
+VAR _Y2Sum =
+    SUMX ( _XY, [@X2] )
+VAR _Result =
+    DIVIDE ( _XYSum, _Y2Sum )
+RETURN
+    _Result
