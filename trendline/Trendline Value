@@ -1,5 +1,5 @@
 VAR _X =
     SELECTEDVALUE ( 'Date'[Date] )
-VAR _Result = _X * [Trendline Slope] + [Trendline Offset]
+VAR _Result = _X * [Trendline Slope] + [Trendline Intercept]
 RETURN
     _Result
