@@ -1,4 +1,4 @@
-Trendline Intercept = 
+Trendline Slope = 
 VAR _XAVg =
     AVERAGEX ( ALLSELECTED ( 'Date'[Date] ), 'Date'[Date] )
 VAR _YAVg =
