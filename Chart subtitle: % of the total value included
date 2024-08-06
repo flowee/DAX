@@ -1,0 +1,17 @@
+//Chart subtitle: % of the interactions included
+VAR _Included =
+   CALCULATE (
+        [Count of Interactions],
+        ALLSELECTED ( 'Location'[State] )
+    )
+VAR _Total =
+    --total interactions for all states
+    CALCULATE (
+        [Count of Interactions],
+        ALL ( 'Location'[State] )
+    )
+VAR _Result =
+    DIVIDE ( _Included, _Total )
+VAR _Text = FORMAT ( _Result, "0%" ) & " of all the interactions"    
+RETURN
+    _Text
