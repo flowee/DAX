@@ -1,0 +1,42 @@
+UNION(
+    ADDCOLUMNS(
+        DATESMTD('Date'[Date]),
+        "Type", "MTD",
+        "Index", 1
+    ),
+    ADDCOLUMNS(
+        DATESQTD('Date'[Date]),
+        "Type", "QTD",
+        "Index", 2
+    ),
+    ADDCOLUMNS(
+        DATESYTD('Date'[Date]),
+        "Type", "YTD",
+        "Index", 3
+    ),
+    ADDCOLUMNS(
+        PREVIOUSMONTH(DATESMTD('Date'[Date])),
+        "Type", "Last Month",
+        "Index", 4
+    ),
+    ADDCOLUMNS(
+        PREVIOUSQUARTER(DATESQTD('Date'[Date])),
+        "Type", "Last Qtr",
+        "Index", 5
+    ),
+    ADDCOLUMNS(
+        PREVIOUSYEAR(DATESYTD('Date'[Date])),
+        "Type", "Last Year",
+        "Index", 6
+    ),
+    ADDCOLUMNS(
+        CALENDAR(MIN('Date'[Date]),MAX('Date'[Date])),
+        "Type", "All Time",
+        "Index", 7
+    ),
+    ADDCOLUMNS(
+        CALENDAR(MIN('Date'[Date]),MAX('Date'[Date])),
+        "Type", "Custom",
+        "Index", 8
+    )
+)
