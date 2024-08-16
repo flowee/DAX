@@ -1,31 +1,55 @@
 //Custom periods: MTD, QTD, YTD, Last Month, Last Qtr, Last Year, All Time, Custom
+//
+//Measure for date slicer filter:
+//To enable date filter when "Custom" custom period selected, and disable if not
+//IF ( SELECTEDVALUE ( 'Custom Periods'[Period] ) = "Custom", 1, 0 )
+//
 UNION (
-    ADDCOLUMNS ( DATESMTD ( 'Date'[Date] ), "Type", "MTD", "Index", 1 ),
-    ADDCOLUMNS ( DATESQTD ( 'Date'[Date] ), "Type", "QTD", "Index", 2 ),
-    ADDCOLUMNS ( DATESYTD ( 'Date'[Date] ), "Type", "YTD", "Index", 3 ),
+    //ADDCOLUMNS ( DATESMTD ( 'Date'[Date] ), "Period", "MTD", "Index", 1 ),
+    //ADDCOLUMNS ( DATESQTD ( 'Date'[Date] ), "Period", "QTD", "Index", 2 ),
     ADDCOLUMNS (
-        PREVIOUSMONTH ( DATESMTD ( 'Date'[Date] ) ),
-        "Type", "Last Month",
-        "Index", 4
+        DATESBETWEEN ( 'Date'[Date], DATE ( YEAR ( TODAY () ), 1, 1 ), TODAY () - 1 ),
+        "Period", "YTD",
+        "Index", 3
     ),
+    //ADDCOLUMNS (
+    //    PREVIOUSMONTH ( DATESMTD ( 'Date'[Date] ) ),
+    //    "Period", "Last Month",
+    //    "Index", 4
+    //),
+    //ADDCOLUMNS (
+    //    PREVIOUSQUARTER ( DATESQTD ( 'Date'[Date] ) ),
+    //    "Period", "Last Qtr",
+    //    "Index", 5
+    //),
+    //ADDCOLUMNS (
+    //    PREVIOUSYEAR ( DATESYTD ( 'Date'[Date] ) ),
+    //    "Period", "Last Year",
+    //    "Index", 6
+    //),
     ADDCOLUMNS (
-        PREVIOUSQUARTER ( DATESQTD ( 'Date'[Date] ) ),
-        "Type", "Last Qtr",
-        "Index", 5
-    ),
-    ADDCOLUMNS (
-        PREVIOUSYEAR ( DATESYTD ( 'Date'[Date] ) ),
-        "Type", "Last Year",
-        "Index", 6
-    ),
-    ADDCOLUMNS (
-        CALENDAR ( MIN ( 'Date'[Date] ), MAX ( 'Date'[Date] ) ),
-        "Type", "All Time",
+        DATESBETWEEN ( 'Date'[Date], TODAY () - 90, TODAY () - 1 ),
+        "Period", "Last 90 days",
         "Index", 7
     ),
     ADDCOLUMNS (
-        CALENDAR ( MIN ( 'Date'[Date] ), MAX ( 'Date'[Date] ) ),
-        "Type", "Custom",
+        DATESBETWEEN ( 'Date'[Date], TODAY () - 60, TODAY () - 1 ),
+        "Period", "Last 60 days",
         "Index", 8
+    ),
+    ADDCOLUMNS (
+        DATESBETWEEN ( 'Date'[Date], TODAY () - 30, TODAY () - 1 ),
+        "Period", "Last 30 days",
+        "Index", 9
+    ),
+    ADDCOLUMNS (
+        CALENDAR ( MIN ( 'Date'[Date] ), MAX ( 'Date'[Date] ) ),
+        "Period", "All Time",
+        "Index", 10
+    ),
+    ADDCOLUMNS (
+        CALENDAR ( MIN ( 'Date'[Date] ), MAX ( 'Date'[Date] ) ),
+        "Period", "Custom",
+        "Index", 11
     )
 )
