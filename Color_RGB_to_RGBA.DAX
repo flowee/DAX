@@ -1,4 +1,6 @@
 // Adds alpha channel (opacity) to RGB color (RGB HEX -> RGBA HEX)
+//Copyright: Andrzej Leszkiewicz
+//  LinkedIn: https://linkedin.com/in/avatorl
 VAR _Color = "#d45087" -- color RGB HEX
 VAR _Opacity =
     -- opacity from 0 to 1
