@@ -6,7 +6,7 @@ VAR _WIdth = 300
 //=== SVG =========================================================================================
 VAR _SVG_Image_Header = "data:image/svg+xml;utf8,"
 VAR _SVG_Open = "<svg xmlns=""http://www.w3.org/2000/svg"" width='" & _Width & "' height='" & _Height & "' >"
-VAR _foreignObject = "<foreignObject x='0' y='0' width='" & _Width & "' height='" & _Height & "' fill='red' ><div xmlns='http://www.w3.org/1999/xhtml' >"
+VAR _foreignObject = "<foreignObject x='0' y='0' width='" & _Width & "' height='" & _Height & "' ><div xmlns='http://www.w3.org/1999/xhtml' >"
 VAR _SVG_Close = "</div></foreignObject></svg>"
 VAR _SVG_HTML = "
 <p>HTML</p>
