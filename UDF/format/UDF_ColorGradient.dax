@@ -1,4 +1,11 @@
 // Adds alpha channel (opacity) to RGB color (RGB HEX -> RGBA HEX)
+// Example:
+//    UDF_ColorGradient (
+//        "#ff0000",
+//        SUM ( 'Sales'[Sales] ),
+//        ALLSELECTED ( 'Product'[Product] ),
+//        1
+//    )
 (
     _Color: STRING VAL, -- -- color RGB HEX, e.g. "#d45087"
     _Value:  ANYREF EXPR,
