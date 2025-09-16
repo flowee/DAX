@@ -1,5 +1,5 @@
 # DAX User-Defined Function for IBCS-guided visualizations
-## UDF_SVG_IBCS_AbsoluteVariance.dax
+## UDF_SVG_IBCS_AbsoluteValues
 <img width="212" height="131" alt="image" src="https://github.com/user-attachments/assets/e3b1245b-28be-4db2-8ff8-00022f21d341" />
 
 ```
