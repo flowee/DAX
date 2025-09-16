@@ -3,12 +3,13 @@
 <img width="267" height="150" alt="image" src="https://github.com/user-attachments/assets/75cc6271-17eb-4466-bbeb-91c0641c090d" />
 
 ```
-UDF_SVG_IBCS_Absolutevariance (
-    [Delta PY],
-    FORMAT ( [Delta PY], "#0,," ),
+UDF_SVG_IBCS_AbsoluteValues (
+    [Sales AC],
+    BLANK (),
+    [Sales PY],
+    "grey",
+    FORMAT ( [Sales AC], "#0,," ),
     NOT ( HASONEVALUE ( 'Store'[Name] ) ),
-    MAXX ( ALLSELECTED ( 'Store'[Short Name] ), [Delta PY] ),
-    MINX ( ALLSELECTED ( 'Store'[Short Name] ), [Delta PY] ),
     MAXX ( ALLSELECTED ( 'Store' ), MAX ( [Sales AC], [Sales PY] ) )
 )
 ```
