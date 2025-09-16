@@ -6,7 +6,7 @@
 UDF_SVG_IBCS_Absolutevariance (
     [Delta PY],
     FORMAT ( [Delta PY], "#0,," ),
-    IF ( HASONEVALUE ( 'Store'[Name] ), FALSE (), TRUE () ),
+    NOT ( HASONEVALUE ( 'Store'[Name] ) ),
     MAXX ( ALLSELECTED ( 'Store'[Short Name] ), [Delta PY] ),
     MINX ( ALLSELECTED ( 'Store'[Short Name] ), [Delta PY] ),
     MAXX ( ALLSELECTED ( 'Store' ), MAX ( [Sales AC], [Sales PY] ) )
@@ -20,9 +20,22 @@ UDF_SVG_IBCS_Absolutevariance (
 UDF_SVG_IBCS_Absolutevariance (
     [Delta PY],
     FORMAT ( [Delta PY], "#0,," ),
-    IF ( HASONEVALUE ( 'Store'[Name] ), FALSE (), TRUE () ),
+    NOT ( HASONEVALUE ( 'Store'[Name] ) ),
     MAXX ( ALLSELECTED ( 'Store'[Short Name] ), [Delta PY] ),
     MINX ( ALLSELECTED ( 'Store'[Short Name] ), [Delta PY] ),
     MAXX ( ALLSELECTED ( 'Store' ), MAX ( [Sales AC], [Sales PY] ) )
 )
 ```
+
+##
+<img width="290" height="150" alt="image" src="https://github.com/user-attachments/assets/c8a310e4-38d4-406d-8029-4f89bba522ad" />
+## [UDF_SVG_IBCS_RelativeVariance](https://github.com/avatorl/DAX/blob/master/UDF/IBCS/UDF_SVG_IBCS_RelativeVariance.dax)
+
+```
+UDF_SVG_IBCS_RelativeVariance (
+    ROUND ( [Delta PY%] * 100, 0 ),
+    FORMAT ( [Delta PY%] * 100, "+#,0;-#,0;#,0" ),
+    NOT ( HASONEVALUE ( 'Store'[Name] ) )
+)
+```
+
