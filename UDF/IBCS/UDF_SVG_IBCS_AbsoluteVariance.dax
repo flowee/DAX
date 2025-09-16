@@ -1,12 +1,12 @@
 DEFINE FUNCTION UDF_SVG_IBCS_AbsoluteVariance =
 (
    _ValueMain: scalar VAL,  // absolute variance = actual value - base (previous year) value
-   _DataLabel: scalar VAL,  // data label - formatted variance value; use FORMAT()
-   _IsTotalRow: scalar VAL, // is it a total row: TRUE() or FALSE(); use NOT ( HASONEVALUE () )
+   _DataLabel: STRING VAL,  // data label - formatted variance value; use FORMAT()
+   _IsTotalRow: BOOLEAN VAL, // is it a total row: TRUE() or FALSE(); use NOT ( HASONEVALUE () )
    _valueMax: scalar VAL,    // Max of the variance for all items in the table (ALLSELECTED)
    _valueMin: scalar VAL,    // Min of the variance for all items in the table (ALLSELECTED)
    _ValueScale: SCALAR VAL // Max of the both (main and base) absolute values for all items in the table (ALLSELECTED)
-) 
+)
 => 
 //=================================================================================================
 //Project: a calculation group for generating IBCS-styled charts (as SVG images)
