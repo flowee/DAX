@@ -1,0 +1,63 @@
+// Adds alpha channel (opacity) to RGB color (RGB HEX -> RGBA HEX)
+(
+    _Color: STRING VAL, -- -- color RGB HEX, e.g. "#d45087"
+    _Value:  ANYREF EXPR,
+    _AllSelected: TABLE,
+    _Power: decimal VAL
+ ) =>
+VAR _MaxValue = MAXX ( _AllSelected, CALCULATE ( _Value ) )
+VAR _Opacity =
+    -- opacity from 0 to 1
+    POWER ( DIVIDE ( _Value, _MaxValue ), _Power )
+VAR _AlphaDecimal =
+    -- opacity from 0 to 255
+    INT ( _Opacity * 255 ) //
+// Decimal to HEX
+VAR _Hi =
+    INT ( _AlphaDecimal / 16 )
+VAR _Lo =
+    MOD ( _AlphaDecimal, 16 )
+VAR _HexHi =
+    SWITCH (
+        _Hi,
+        0, "0",
+        1, "1",
+        2, "2",
+        3, "3",
+        4, "4",
+        5, "5",
+        6, "6",
+        7, "7",
+        8, "8",
+        9, "9",
+        10, "A",
+        11, "B",
+        12, "C",
+        13, "D",
+        14, "E",
+        15, "F"
+    )
+VAR _HexLo =
+    SWITCH (
+        _Lo,
+        0, "0",
+        1, "1",
+        2, "2",
+        3, "3",
+        4, "4",
+        5, "5",
+        6, "6",
+        7, "7",
+        8, "8",
+        9, "9",
+        10, "A",
+        11, "B",
+        12, "C",
+        13, "D",
+        14, "E",
+        15, "F"
+    )
+VAR _AlphaHex = _HexHi & _HexLo
+RETURN
+    _Color & _AlphaHex
+-- RGBA HEX
