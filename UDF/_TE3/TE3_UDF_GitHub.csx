@@ -9,6 +9,7 @@
 //   ➡️ Compare model functions against their GitHub versions
 //   ➡️ Update functions in the model
 //   ➡️ Update functions back into GitHub (create/update .dax files)
+//   ➡️ Update repository UDFs with the code from the model
 // ===========================================================================
 
 var repoApiUrl = "https://api.github.com/repos/avatorl/DAX/contents/UDF";
