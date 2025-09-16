@@ -1,4 +1,5 @@
-// DEFINE FUNCTION _SVG_IBCS_AbsoluteVariance =
+
+// DEFINE FUNCTION _SVG_IBCS_AbsoluteVaues =
 (
    _ValueMain: scalar VAL,  // actual value
    _ValueSecond: scalar VAL,// forecasted value
