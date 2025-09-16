@@ -1,4 +1,7 @@
 # DAX User-Defined Function for IBCS-guided visualizations
+
+❗Change Data Category to "Image URL"
+
 ## [UDF_SVG_IBCS_AbsoluteValues.dax](https://github.com/avatorl/DAX/blob/master/UDF/IBCS/UDF_SVG_IBCS_AbsoluteValues.dax)
 <img width="267" height="150" alt="image" src="https://github.com/user-attachments/assets/75cc6271-17eb-4466-bbeb-91c0641c090d" />
 
