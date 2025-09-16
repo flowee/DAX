@@ -143,7 +143,7 @@ form.Height = 680;
 var tree = new System.Windows.Forms.TreeView();
 tree.CheckBoxes = true;
 tree.Dock = System.Windows.Forms.DockStyle.Top;
-tree.Height = 540;
+tree.Height = 500;
 
 foreach (var grp in funcs.GroupBy(f => f.Path).OrderBy(g => g.Key))
 {
@@ -168,18 +168,45 @@ tree.ExpandAll();
 // ---------------------------------------------------------------------
 // Buttons
 var btnWidth = 180;
-var updateModel = new System.Windows.Forms.Button{ Text="Update in the Model", Width=btnWidth, Top=550, Left=250, DialogResult=System.Windows.Forms.DialogResult.OK };
-var updateGitHub = new System.Windows.Forms.Button{ Text="Update in GitHub", Width=btnWidth, Top=550, Left=450 };
-var compare = new System.Windows.Forms.Button{ Text="Compare", Width=btnWidth, Top=550, Left=50 };
-var cancel = new System.Windows.Forms.Button{ Text="Cancel", Width=btnWidth, Top=590, Left=450, DialogResult=System.Windows.Forms.DialogResult.Cancel };
+var compare = new System.Windows.Forms.Button{ Text="Compare", Width=btnWidth, Top=555, Left=50 };
+var updateModel = new System.Windows.Forms.Button{ Text="Update in the Model", Width=btnWidth, Top=555, Left=250, DialogResult=System.Windows.Forms.DialogResult.OK };
+var updateGitHub = new System.Windows.Forms.Button{ Text="Update in GitHub", Width=btnWidth, Top=555, Left=450 };
+var cancel = new System.Windows.Forms.Button{ Text="Cancel", Width=btnWidth, Top=595, Left=450, DialogResult=System.Windows.Forms.DialogResult.Cancel };
 
 form.Controls.Add(tree);
+
+// Legend panel
+var legend = new System.Windows.Forms.Panel();
+legend.Top = 510;
+legend.Left = 10;
+legend.Width = 680;
+legend.Height = 40;
+
+void AddLegendItem(string text, System.Drawing.Color color, System.Drawing.FontStyle style, int left)
+{
+    var lbl = new System.Windows.Forms.Label();
+    lbl.Text = text;
+    lbl.AutoSize = true;
+    lbl.Left = left;
+    lbl.Top = 10;
+    lbl.ForeColor = color;
+    lbl.Font = new System.Drawing.Font(tree.Font, style);
+    legend.Controls.Add(lbl);
+}
+
+AddLegendItem("Normal = not in the model", System.Drawing.Color.Black, System.Drawing.FontStyle.Regular, 5);
+AddLegendItem("Bold = exists in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Bold, 200);
+AddLegendItem("Green = match", System.Drawing.Color.Green, System.Drawing.FontStyle.Bold, 400);
+AddLegendItem("Red = differs", System.Drawing.Color.Red, System.Drawing.FontStyle.Bold, 530);
+
+form.Controls.Add(legend);
+
+// Buttons
 form.Controls.Add(updateModel);
 form.Controls.Add(updateGitHub);
 form.Controls.Add(compare);
 form.Controls.Add(cancel);
-form.AcceptButton = updateModel;
-form.CancelButton = cancel;
+
 
 // ---------------------------------------------------------------------
 // Compare logic
