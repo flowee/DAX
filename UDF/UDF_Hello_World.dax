@@ -1,4 +1,4 @@
-DEFINE FUNCTION _HelloWorld =
+// DEFINE FUNCTION _HelloWorld =
 ( 
     _WorldName: scalar val 
 ) =>
