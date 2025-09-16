@@ -1,4 +1,4 @@
-DEFINE FUNCTION UDF_SVG_IBCS_RelativeVariance =
+// DEFINE FUNCTION UDF_SVG_IBCS_RelativeVariance =
 (
    _ValueMain: scalar VAL,  // actual value
    _DataLabel: STRING VAL,  // data label
