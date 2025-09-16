@@ -1,4 +1,3 @@
-
 // DEFINE FUNCTION UDF_SVG_IBCS_AbsoluteVariance =
 (
    _ValueMain: scalar VAL,  // absolute variance = actual value - base (previous year) value
