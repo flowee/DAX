@@ -1,5 +1,9 @@
 // TE3 Macro: Load DAX UDFs from GitHub and insert/update in the current model
 
+// Andrzej Leszkiewicz
+//    https://powerofbi.org/
+//    https://www.linkedin.com/in/avatorl/
+
 // Root folder in GitHub repo (scanned recursively for .dax files)
 var repoApiUrl = "https://api.github.com/repos/avatorl/DAX/contents/UDF";
 
