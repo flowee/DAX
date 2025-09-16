@@ -1,4 +1,3 @@
-
 //Returns SVG image with embedded HTML/CSS code
 (
     _HTML: STRING VAL,  //  HTML code
@@ -15,3 +14,5 @@ VAR _SVG_Close = "</div></foreignObject></svg>"
 VAR _SVG = _SVG_Image_Header & _SVG_Open & _foreignObject & "<style>" & _CSS & "</style>" & _HTML & _SVG_Close
 RETURN
     _SVG
+    
+    //
