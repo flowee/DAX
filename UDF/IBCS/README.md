@@ -18,7 +18,7 @@ UDF_SVG_IBCS_AbsoluteValues (
 <img width="378" height="161" alt="image" src="https://github.com/user-attachments/assets/8cf32b8d-bc85-48b2-bab9-93b9b09f99c5" />
 
 ```
-UDF_SVG_IBCS_Absolutevariance (
+UDF_SVG_IBCS_AbsoluteVariance (
     [Delta PY],
     FORMAT ( [Delta PY], "#0,," ),
     NOT ( HASONEVALUE ( 'Store'[Name] ) ),
