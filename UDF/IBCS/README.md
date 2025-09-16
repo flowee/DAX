@@ -34,7 +34,7 @@ UDF_SVG_IBCS_Absolutevariance (
 
 ```
 UDF_SVG_IBCS_RelativeVariance (
-    ROUND ( [Delta PY%] * 100, 0 ),
+    [Delta PY%] * 100,
     FORMAT ( [Delta PY%] * 100, "+#,0;-#,0;#,0" ),
     NOT ( HASONEVALUE ( 'Store'[Name] ) )
 )
