@@ -1,3 +1,4 @@
+
 // DEFINE FUNCTION UDF_SVG_IBCS_AbsoluteVariance =
 (
    _ValueMain: scalar VAL,  // absolute variance = actual value - base (previous year) value
@@ -9,7 +10,7 @@
 )
 => 
 //=================================================================================================
-//Project: a calculation group for generating IBCS-styled charts (as SVG images)
+//Project: an UDF for generating IBCS-styled charts (as SVG images)
 //  The visualization design follows IBCS guidelines https://www.ibcs.com/ibcs-standards-1-2/
 //  Although it is not produced, not certified, not authorized, not endorsed by IBCS® https://www.ibcs.com/
 //  The charts can be embedded into Table, Matrix, and New Card core Power BI visuals
@@ -21,7 +22,7 @@
 //=================================================================================================
 //License: MIT Expat License https://en.wikipedia.org/wiki/MIT_License (free)
 //=================================================================================================
-//Description: This calculation item Generates an SVG image featuring a horizontal diverging bar chart (to show absolute variance)
+//Description: This UDF Generates an SVG image featuring a horizontal diverging bar chart (to show absolute variance)
 //  The chart includes diverging bars value bar: green for positive variance, red for negative variance
 //  It also includes data labels (for all bars)
 //Updated: 2025-09-16   
