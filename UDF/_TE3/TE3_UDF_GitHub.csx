@@ -1,26 +1,19 @@
-// TE3 Macro: Load DAX UDFs from GitHub and insert/update in the current model
+// TE3 Macro: TE3 GitHub UDF Manager
 // ===========================================================================
 // Andrzej Leszkiewicz
 //    https://powerofbi.org/
 //    https://www.linkedin.com/in/avatorl/
 // ===========================================================================
-// Features:
-//   ➡️ Select and import one or multiple UDFs from GitHub into the semantic model
-//   ➡️ Compare model functions against their GitHub versions
-//   ➡️ Update functions in the model
-//   ➡️ Update functions back into GitHub (create/update .dax files)
-//   ➡️ Update repository UDFs with the code from the model
-// ===========================================================================
 
 var repoApiUrl = "https://api.github.com/repos/avatorl/DAX/contents/UDF";
-var owner = "avatorl";        // GitHub repo owner
-var repo  = "DAX";            // GitHub repo name
-var branch = "master";        // or "main"
+var owner  = "avatorl";
+var repo   = "DAX";
+var branch = "master";    // or "main"
 
-// Try to read token from User or Machine environment variables
+// ---------------------------------------------------------------------
+// Token
 var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.User)
                 ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.Machine);
-
 if (string.IsNullOrEmpty(githubToken))
 {
     System.Windows.Forms.MessageBox.Show("⚠️ Missing GitHub token. Set GITHUB_TOKEN as environment variable.");
@@ -28,7 +21,33 @@ if (string.IsNullOrEmpty(githubToken))
 }
 
 // ---------------------------------------------------------------------
-// Download a file from GitHub
+// Normalization helpers
+
+// For compare: ignore line-ending differences + trailing blank lines
+Func<string, string> normalizeForCompare = text =>
+{
+    if (string.IsNullOrEmpty(text)) return "";
+    var norm = text.Replace("\r\n", "\n").Replace("\r", "\n");
+    return norm.TrimEnd('\n');   // ignore trailing newlines only
+};
+
+// For upload: preserve final newline so GitHub won’t add one
+Func<string, string> normalizeForUpload = text =>
+{
+    if (string.IsNullOrEmpty(text)) return "";
+
+    var norm = text.Replace("\r\n", "\n").Replace("\r", "\n");
+
+    // 🔹 Strip ALL leading and trailing newlines
+    norm = norm.Trim('\n');
+
+    // Ensure exactly one final newline
+    return norm + "\n";
+};
+
+
+// ---------------------------------------------------------------------
+// Download file from GitHub
 Func<string,string> downloadFile = (url) =>
 {
     using (var client = new System.Net.Http.HttpClient())
@@ -41,7 +60,7 @@ Func<string,string> downloadFile = (url) =>
 };
 
 // ---------------------------------------------------------------------
-// Recursively scan GitHub repo for .dax files
+// Scan repo for .dax files
 Func<string,string,System.Collections.Generic.List<dynamic>> getFuncs = null;
 getFuncs = (apiUrl, relPath) =>
 {
@@ -79,7 +98,7 @@ getFuncs = (apiUrl, relPath) =>
 };
 
 // ---------------------------------------------------------------------
-// Upload to GitHub (create or update a .dax file)
+// Upload to GitHub
 Action<string,string,string> uploadToGitHub = (path, code, sha) =>
 {
     using (var client = new System.Net.Http.HttpClient())
@@ -87,18 +106,21 @@ Action<string,string,string> uploadToGitHub = (path, code, sha) =>
         client.DefaultRequestHeaders.Add("User-Agent", "TabularEditor3");
         client.DefaultRequestHeaders.Add("Authorization", $"token {githubToken}");
 
+        var normalized = normalizeForUpload(code);
+
         string url = $"https://api.github.com/repos/{owner}/{repo}/contents/{path}";
         var body = new {
             message = "Update UDF from Tabular Editor",
-            content = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(code)),
-            branch = branch,
-            sha = sha // null when new file
+            content = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(normalized)),
+            branch  = branch,
+            sha     = sha   // required for update
         };
         var json = Newtonsoft.Json.JsonConvert.SerializeObject(body);
         var resp = client.PutAsync(url, new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json")).Result;
+        var respText = resp.Content.ReadAsStringAsync().Result;
 
         if (!resp.IsSuccessStatusCode)
-            throw new Exception(resp.StatusCode + ": " + resp.Content.ReadAsStringAsync().Result);
+            throw new Exception(resp.StatusCode + ": " + respText);
     }
 };
 
@@ -115,7 +137,7 @@ var existing = new System.Collections.Generic.HashSet<string>(
 // ---------------------------------------------------------------------
 // UI
 var form = new System.Windows.Forms.Form();
-form.Text = "Manage DAX UDFs from GitHub";
+form.Text = "TE3 GitHub UDF Manager";
 form.Width = 700; 
 form.Height = 680;
 
@@ -126,7 +148,12 @@ tree.Height = 540;
 
 foreach (var grp in funcs.GroupBy(f => f.Path).OrderBy(g => g.Key))
 {
-    var folder = new System.Windows.Forms.TreeNode(string.IsNullOrEmpty(grp.Key) ? "(root)" : grp.Key);
+    var folderName = string.IsNullOrEmpty(grp.Key) 
+        ? $"{owner}/{repo}/UDF"
+        : grp.Key;
+
+    var folder = new System.Windows.Forms.TreeNode(folderName);
+
     foreach (var f in grp)
     {
         var node = new System.Windows.Forms.TreeNode(f.Name);
@@ -139,6 +166,7 @@ foreach (var grp in funcs.GroupBy(f => f.Path).OrderBy(g => g.Key))
 }
 tree.ExpandAll();
 
+// ---------------------------------------------------------------------
 // Buttons
 var btnWidth = 180;
 var updateModel = new System.Windows.Forms.Button{ Text="Update in the Model", Width=btnWidth, Top=550, Left=250, DialogResult=System.Windows.Forms.DialogResult.OK };
@@ -166,32 +194,37 @@ compare.Click += (s,e) => {
     {
         foreach (System.Windows.Forms.TreeNode node in folder.Nodes)
         {
-            // reset on each compare run
             node.ForeColor = System.Drawing.Color.Black;
             node.ToolTipText = "";
+
+            if (node.Tag == null) continue;
 
             dynamic f = node.Tag;
             if (existingNow.Contains((string)f.Name))
             {
                 var code = downloadFile(f.Url);
-                var modelFn = Model.Functions
-                    .FirstOrDefault(fn => fn.Name.Equals(f.Name, StringComparison.OrdinalIgnoreCase));
+                var modelFn = Model.Functions.FirstOrDefault(fn => fn.Name.Equals(f.Name, StringComparison.OrdinalIgnoreCase));
 
                 if (modelFn != null)
                 {
-                    var repoCode = code.Trim().Replace("\r\n","\n");
-                    var modelCode = modelFn.Expression.Trim().Replace("\r\n","\n");
+                    var repoCode  = normalizeForCompare(code);
+                    var modelCode = normalizeForCompare(modelFn.Expression);
 
                     if (modelCode == repoCode)
-                        node.ForeColor = System.Drawing.Color.Green;   // match
+                    {
+                        node.ForeColor = System.Drawing.Color.Green;
+                        node.ToolTipText = "Match between model and GitHub";
+                    }
                     else
-                        node.ForeColor = System.Drawing.Color.Red;     // mismatch
+                    {
+                        node.ForeColor = System.Drawing.Color.Red;
+                        node.ToolTipText = "Code differs between model and GitHub";
+                    }
                 }
             }
         }
     }
 };
-
 
 // ---------------------------------------------------------------------
 // GitHub update logic
@@ -206,14 +239,12 @@ updateGitHub.Click += (s,e) => {
     {
         try
         {
-            // Always fetch the latest SHA
-            string sha = null;
-
             var path = string.IsNullOrEmpty(f.Path) 
                 ? $"UDF/{f.Name}.dax" 
                 : $"UDF/{f.Path.Replace("\\", "/")}/{f.Name}.dax";
 
-
+            // get latest SHA
+            string sha = null;
             using (var client = new System.Net.Http.HttpClient())
             {
                 client.DefaultRequestHeaders.Add("User-Agent", "TabularEditor3");
@@ -229,7 +260,11 @@ updateGitHub.Click += (s,e) => {
             var fn = Model.Functions.FirstOrDefault(x => x.Name == f.Name);
             if (fn != null)
             {
-                uploadToGitHub(path, fn.Expression, sha);
+                var normalized = normalizeForUpload(fn.Expression);
+                uploadToGitHub(path, normalized, sha);
+
+                // Keep model in sync but for compare use compare-normalization
+                fn.Expression = normalizeForCompare(fn.Expression);
             }
         }
         catch (Exception ex)
@@ -239,7 +274,6 @@ updateGitHub.Click += (s,e) => {
     }
 
     System.Windows.Forms.MessageBox.Show($"Updated {selected.Count} UDF(s) in GitHub.");
-
 };
 
 // ---------------------------------------------------------------------
@@ -258,8 +292,9 @@ if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
         if (!string.IsNullOrWhiteSpace(dax))
         {
             var fn = Model.Functions.FirstOrDefault(x => x.Name == f.Name);
-            if (fn == null) Model.AddFunction(f.Name, dax);
-            else fn.Expression = dax;
+            var normalized = normalizeForCompare(dax);
+            if (fn == null) Model.AddFunction(f.Name, normalized);
+            else fn.Expression = normalized;
         }
     }
     System.Windows.Forms.MessageBox.Show($"Loaded {selected.Count} UDF(s) into the model.");
