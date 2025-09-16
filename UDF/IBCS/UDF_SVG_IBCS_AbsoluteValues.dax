@@ -1,13 +1,13 @@
 DEFINE FUNCTION _SVG_IBCS_AbsoluteVariance =
 (
    _ValueMain: scalar VAL,  // actual value
-   _ValueSecond: SCALAR VAL,// forecasted value
+   _ValueSecond: scalar VAL,// forecasted value
    _ValueBase: scalar VAL,  // base value (e.g. previous period)
-   _BaseType: scalar VAL,   // base type: "grey" or "outlined"
+   _BaseType: STRING VAL,   // base type: "grey" or "outlined"
    _DataLabel: scalar VAL,  // data label
-   _IsTotalRow: scalar VAL, // is it a total row: TRUE() or FALSE()
+   _IsTotalRow: BOOLEAN VAL, // is it a total row: TRUE() or FALSE()
    _valueMax: scalar VAL    // Max of main and base values for all items in the table (ALLSELECTED)
-) 
+)
 =>
 // UDF
 //=================================================================================================
