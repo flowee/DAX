@@ -9,7 +9,7 @@
 var repoApiUrl = "https://api.github.com/repos/avatorl/DAX/contents/UDF";
 var owner  = "avatorl";
 var repo   = "DAX";
-var branch = "master";    // or "main"
+var branch = "master";
 
 // ---------------------------------------------------------------------
 // Token
