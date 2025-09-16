@@ -7,3 +7,7 @@
 ➡️ Compare existing UDFs in the model against their latest versions in the repository
 
 ➡️ Update model UDFs with the most recent code from the repository in just one click
+
+➡️ Update repository UDFs with the code from the model
+
+GitHub token is required in GITHUB_TOKEN env. variable
