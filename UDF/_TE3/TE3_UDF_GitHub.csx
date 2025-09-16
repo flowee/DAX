@@ -1,9 +1,9 @@
 // TE3 Macro: TE3 GitHub UDF Manager
+//    https://github.com/avatorl/DAX/tree/master/UDF/_TE3
 // ===========================================================================
 // Andrzej Leszkiewicz
 //    https://powerofbi.org/
 //    https://www.linkedin.com/in/avatorl/
-//    https://github.com/avatorl/DAX/tree/master/UDF/_TE3
 // ===========================================================================
 
 var repoApiUrl = "https://api.github.com/repos/avatorl/DAX/contents/UDF";
