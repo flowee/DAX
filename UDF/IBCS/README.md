@@ -2,7 +2,6 @@
 ## UDF_SVG_IBCS_AbsoluteVariance.dax
 <img width="212" height="131" alt="image" src="https://github.com/user-attachments/assets/e3b1245b-28be-4db2-8ff8-00022f21d341" />
 
-Example:
 ```
 UDF_SVG_IBCS_AbsoluteVariance (
     [Sales AC],
