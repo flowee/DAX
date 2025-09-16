@@ -12,7 +12,8 @@ var repo   = "DAX";
 var branch = "master";
 
 // ---------------------------------------------------------------------
-// Token
+// GitHub Personal Access Token
+//    https://github.com/settings/tokens (permissions: public_repo)
 var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.User)
                 ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.Machine);
 if (string.IsNullOrEmpty(githubToken))
