@@ -21,28 +21,25 @@ if (string.IsNullOrEmpty(githubToken))
 }
 
 // ---------------------------------------------------------------------
-// Normalization helpers
-
-// For compare: ignore line-ending differences + trailing blank lines
-Func<string, string> normalizeForCompare = text =>
-{
-    if (string.IsNullOrEmpty(text)) return "";
-    var norm = text.Replace("\r\n", "\n").Replace("\r", "\n");
-    return norm.TrimEnd('\n');   // ignore trailing newlines only
-};
-
-// For upload: preserve final newline so GitHub won’t add one
-Func<string, string> normalizeForUpload = text =>
+// Normalization: only fix line endings + remove leading blank lines
+Func<string, string> normalizeLineEndings = text =>
 {
     if (string.IsNullOrEmpty(text)) return "";
 
     var norm = text.Replace("\r\n", "\n").Replace("\r", "\n");
 
-    // 🔹 Strip ALL leading and trailing newlines
-    norm = norm.Trim('\n');
+    // Remove leading blank lines
+    norm = norm.TrimStart('\n');
 
-    // Ensure exactly one final newline
-    return norm + "\n";
+    // Trim trailing spaces at line ends
+    norm = string.Join("\n", norm.Split('\n')
+        .Select(line => line.TrimEnd()));
+
+    // Ensure single trailing newline
+    if (!norm.EndsWith("\n"))
+        norm += "\n";
+
+    return norm;
 };
 
 
@@ -106,7 +103,7 @@ Action<string,string,string> uploadToGitHub = (path, code, sha) =>
         client.DefaultRequestHeaders.Add("User-Agent", "TabularEditor3");
         client.DefaultRequestHeaders.Add("Authorization", $"token {githubToken}");
 
-        var normalized = normalizeForUpload(code);
+        var normalized = normalizeLineEndings(code);
 
         string url = $"https://api.github.com/repos/{owner}/{repo}/contents/{path}";
         var body = new {
@@ -202,24 +199,51 @@ compare.Click += (s,e) => {
             dynamic f = node.Tag;
             if (existingNow.Contains((string)f.Name))
             {
-                var code = downloadFile(f.Url);
-                var modelFn = Model.Functions.FirstOrDefault(fn => fn.Name.Equals(f.Name, StringComparison.OrdinalIgnoreCase));
-
-                if (modelFn != null)
+                try
                 {
-                    var repoCode  = normalizeForCompare(code);
-                    var modelCode = normalizeForCompare(modelFn.Expression);
+                    // Build GitHub API URL (branch aware)
+                    var path = string.IsNullOrEmpty(f.Path)
+                        ? $"UDF/{f.Name}.dax"
+                        : $"UDF/{f.Path.Replace("\\", "/")}/{f.Name}.dax";
 
-                    if (modelCode == repoCode)
+                    string code;
+                    using (var client = new System.Net.Http.HttpClient())
                     {
-                        node.ForeColor = System.Drawing.Color.Green;
-                        node.ToolTipText = "Match between model and GitHub";
+                        client.DefaultRequestHeaders.Add("User-Agent", "TabularEditor3");
+                        if (!string.IsNullOrEmpty(githubToken))
+                            client.DefaultRequestHeaders.Add("Authorization", $"token {githubToken}");
+
+                        string url = $"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}";
+                        var json = client.GetStringAsync(url).Result;
+                        var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
+                        var base64 = (string)obj["content"];
+                        code = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
                     }
-                    else
+
+                    var modelFn = Model.Functions
+                        .FirstOrDefault(fn => fn.Name.Equals(f.Name, StringComparison.OrdinalIgnoreCase));
+
+                    if (modelFn != null)
                     {
-                        node.ForeColor = System.Drawing.Color.Red;
-                        node.ToolTipText = "Code differs between model and GitHub";
+                        var repoCode  = normalizeLineEndings(code);
+                        var modelCode = normalizeLineEndings(modelFn.Expression);
+
+                        if (modelCode == repoCode)
+                        {
+                            node.ForeColor = System.Drawing.Color.Green;
+                            node.ToolTipText = "Match between model and GitHub";
+                        }
+                        else
+                        {
+                            node.ForeColor = System.Drawing.Color.Red;
+                            node.ToolTipText = "Code differs between model and GitHub";
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    node.ForeColor = System.Drawing.Color.DarkOrange;
+                    node.ToolTipText = $"Error comparing: {ex.Message}";
                 }
             }
         }
@@ -260,12 +284,16 @@ updateGitHub.Click += (s,e) => {
             var fn = Model.Functions.FirstOrDefault(x => x.Name == f.Name);
             if (fn != null)
             {
-                var normalized = normalizeForUpload(fn.Expression);
+                // Normalize exactly the same way for upload
+                var normalized = normalizeLineEndings(fn.Expression);
+
+                // Upload
                 uploadToGitHub(path, normalized, sha);
 
-                // Keep model in sync but for compare use compare-normalization
-                fn.Expression = normalizeForCompare(fn.Expression);
+                // Set the model expression to the *same normalized text* we just pushed
+                fn.Expression = normalized;
             }
+
         }
         catch (Exception ex)
         {
@@ -292,7 +320,7 @@ if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
         if (!string.IsNullOrWhiteSpace(dax))
         {
             var fn = Model.Functions.FirstOrDefault(x => x.Name == f.Name);
-            var normalized = normalizeForCompare(dax);
+            var normalized = normalizeLineEndings(dax);
             if (fn == null) Model.AddFunction(f.Name, normalized);
             else fn.Expression = normalized;
         }
