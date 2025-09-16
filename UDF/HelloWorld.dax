@@ -1,0 +1,5 @@
+DEFINE FUNCTION _HelloWorld =
+( 
+    _WorldName: scalar val 
+) =>
+"Hello " & _WorldName
