@@ -1,3 +1,4 @@
+
 // DEFINE FUNCTION UDF_SVG_IBCS_RelativeVariance =
 (
    _ValueMain: scalar VAL,  // actual value
@@ -6,7 +7,7 @@
 ) 
 => 
 //=================================================================================================
-//Project: a calculation group for generating IBCS-styled charts (as SVG images)
+//Project: an UDF for generating IBCS-styled charts (as SVG images)
 //  The visualization design follows IBCS guidelines https://www.ibcs.com/ibcs-standards-1-2/
 //  Although it is not produced, not certified, not authorized, not endorsed by IBCS® https://www.ibcs.com/
 //  The charts can be embedded into Table, Matrix, and New Card core Power BI visuals
