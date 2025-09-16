@@ -2,7 +2,7 @@ DEFINE FUNCTION UDF_SVG_IBCS_RelativeVariance =
 (
    _ValueMain: scalar VAL,  // actual value
    _DataLabel: scalar VAL,  // data label
-   _IsTotalRow: scalar VAL // is it a total row: TRUE() or FALSE()
+   _IsTotalRow: scalar VAL // is it a total row: TRUE() or FALSE(); ; use NOT ( HASONEVALUE () )
 ) 
 => 
 //=================================================================================================
