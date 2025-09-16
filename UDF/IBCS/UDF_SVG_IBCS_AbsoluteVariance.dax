@@ -1,4 +1,4 @@
-DEFINE FUNCTION UDF_SVG_IBCS_AbsoluteVariance =
+DEFINE FUNCTION _SVG_IBCS_AbsoluteVariance =
 (
    _ValueMain: scalar VAL,  // actual value
    _ValueSecond: SCALAR VAL,// forecasted value
