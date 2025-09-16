@@ -1,5 +1,7 @@
 # C# script for Tabular Editor 3
 
+<img width="686" height="673" alt="image" src="https://github.com/user-attachments/assets/68fd752b-f4d8-47e8-ad13-5225d70a2f20" />
+
 ## Features – TE3 GitHub UDF Manager
 
  Features:
