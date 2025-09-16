@@ -1,10 +1,12 @@
+
+//Returns SVG image with embedded HTML/CSS code
 (
     _HTML: STRING VAL,  //  HTML code
     _CSS: STRING VAL,   // CSS style
     _Width: INT64 VAL,  // width
     _Height: INT64 VAL  // image
 ) =>
-//Returns SVG image with embedded HTML/CSS code
+
 //=== SVG =========================================================================================
 VAR _SVG_Image_Header = "data:image/svg+xml;utf8,"
 VAR _SVG_Open = "<svg xmlns=""http://www.w3.org/2000/svg"" width='" & _Width & "' height='" & _Height & "' >"
