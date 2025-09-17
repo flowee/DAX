@@ -46,6 +46,3 @@
 
   <img width="686" height="673" alt="image" src="https://github.com/user-attachments/assets/1fd586fd-fbb6-4fe7-941d-a6437027db14" />
 
-  
-  ❗IN DEVELOPMENT - ALPHA VERSION. Expect changes and bugs.
-
