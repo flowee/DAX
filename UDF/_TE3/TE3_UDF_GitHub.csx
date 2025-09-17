@@ -1,37 +1,52 @@
 // ===========================================================================
 // TE3 Macro: GitHub DAX UDF Manager for TE3
-//    https://github.com/avatorl/DAX/tree/master/UDF/_TE3
-// ===========================================================================
-// Andrzej Leszkiewicz
-//    https://powerofbi.org/
-//    https://www.linkedin.com/in/avatorl/
+// ---------------------------------------------------------------------------
+// Purpose:
+//   - Manage DAX user-defined functions (UDFs) between Tabular Editor 3 and a
+//     GitHub repository.
+//   - Features:
+//       * Load DAX UDFs from GitHub into the current model.
+//       * Compare model functions with GitHub repo versions.
+//       * Update GitHub with selected model functions.
+//       * Visual status indicators in a TreeView (normal, bold, green, red).
+//
+// Requirements:
+//   - A GitHub personal access token (PAT) stored in the environment variable
+//     GITHUB_TOKEN (either User or Machine scope).
+//
+// Author: Andrzej Leszkiewicz
+// Links:
+//   - Project repo: https://github.com/avatorl/DAX/tree/master/UDF/_TE3
+//   - Blog: https://powerofbi.org/
+//   - LinkedIn: https://www.linkedin.com/in/avatorl/
 // ===========================================================================
 
 
-// =================================
+// ===========================================================================
 // Repository configuration
-// =================================
+// ===========================================================================
 var repoApiUrl = "https://api.github.com/repos/avatorl/DAX/contents/UDF";
 var owner  = "avatorl";
 var repo   = "DAX";
 var branch = "master";
 
 
-// =================================
-// GitHub Personal Access Token
-// =================================
+// ===========================================================================
+// GitHub Token (required)
+// ===========================================================================
 var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.User)
                 ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.Machine);
+
 if (string.IsNullOrEmpty(githubToken))
 {
-    System.Windows.Forms.MessageBox.Show("⚠️ Missing GitHub token. Set GITHUB_TOKEN as environment variable.");
+    System.Windows.Forms.MessageBox.Show("⚠️ Missing GitHub token. Please set GITHUB_TOKEN as an environment variable.");
     return;
 }
 
 
-// =================================
-// Single HttpClient instance
-// =================================
+// ===========================================================================
+// HttpClient (shared instance for all requests)
+// ===========================================================================
 var client = new System.Net.Http.HttpClient();
 client.DefaultRequestHeaders.Clear();
 client.DefaultRequestHeaders.Add("User-Agent", "TabularEditor3");
@@ -39,9 +54,10 @@ if (!string.IsNullOrEmpty(githubToken))
     client.DefaultRequestHeaders.Add("Authorization", $"token {githubToken}");
 
 
-// =================================
-// Normalization: clean line endings
-// =================================
+// ===========================================================================
+// Helper: Normalize line endings
+// Ensures consistent formatting of UDF code before comparing/uploading
+// ===========================================================================
 Func<string, string> NormalizeLineEndings = text =>
 {
     if (string.IsNullOrEmpty(text)) return "";
@@ -54,9 +70,9 @@ Func<string, string> NormalizeLineEndings = text =>
 };
 
 
-// =================================
-// Download file from GitHub
-// =================================
+// ===========================================================================
+// Helper: Download file contents from GitHub
+// ===========================================================================
 Func<string, string> DownloadFile = (url) =>
 {
     try
@@ -71,9 +87,10 @@ Func<string, string> DownloadFile = (url) =>
 };
 
 
-// =================================
-// Scan repo for .dax files
-// =================================
+// ===========================================================================
+// Helper: Recursively scan repo for .dax files
+// Returns a list of objects with { Name, Url, Path }
+// ===========================================================================
 Func<string,string,System.Collections.Generic.List<dynamic>> GetFuncs = null;
 GetFuncs = (apiUrl, relPath) =>
 {
@@ -112,9 +129,9 @@ GetFuncs = (apiUrl, relPath) =>
 };
 
 
-// =================================
-// Upload to GitHub
-// =================================
+// ===========================================================================
+// Helper: Upload updated file to GitHub
+// ===========================================================================
 Action<string,string,string> UploadToGitHub = (path, code, sha) =>
 {
     try
@@ -143,11 +160,15 @@ Action<string,string,string> UploadToGitHub = (path, code, sha) =>
 };
 
 
-// =================================
+// ===========================================================================
 // Load functions from GitHub
-// =================================
+// ===========================================================================
 var funcs = GetFuncs(repoApiUrl, "");
-if (funcs.Count == 0) { System.Windows.Forms.MessageBox.Show("No DAX functions found."); return; }
+if (funcs.Count == 0)
+{
+    System.Windows.Forms.MessageBox.Show("No DAX functions found in the repository.");
+    return;
+}
 
 var existing = new System.Collections.Generic.HashSet<string>(
     Model.Functions.Select(f => f.Name),
@@ -155,9 +176,9 @@ var existing = new System.Collections.Generic.HashSet<string>(
 );
 
 
-// =================================
-// UI: Form and TreeView
-// =================================
+// ===========================================================================
+// UI: Form and TreeView (main function list)
+// ===========================================================================
 var form = new System.Windows.Forms.Form();
 form.Text = "GitHub DAX UDF Manager for TE3";
 form.Width = 700; 
@@ -171,6 +192,7 @@ tree.Height = 500;
 var root = new System.Windows.Forms.TreeNode($"{owner}/{repo}/UDF");
 tree.Nodes.Add(root);
 
+// Helper: create/find nodes for folder structure
 System.Windows.Forms.TreeNode GetOrCreateNode(System.Windows.Forms.TreeNodeCollection nodes, string name)
 {
     foreach (System.Windows.Forms.TreeNode n in nodes)
@@ -181,6 +203,7 @@ System.Windows.Forms.TreeNode GetOrCreateNode(System.Windows.Forms.TreeNodeColle
     return newNode;
 }
 
+// Build tree structure
 foreach (var f in funcs.OrderBy(x => x.Path).ThenBy(x => x.Name))
 {
     var pathParts = string.IsNullOrEmpty(f.Path)
@@ -202,20 +225,20 @@ tree.ExpandAll();
 form.Controls.Add(tree);
 
 
-// =================================
+// ===========================================================================
 // UI: Buttons
-// =================================
+// ===========================================================================
 var btnWidth = 180;
-var compare = new System.Windows.Forms.Button{ Text="Compare", Width=btnWidth, Top=555, Left=50 };
-var updateModel = new System.Windows.Forms.Button{ Text="Update in the Model", Width=btnWidth, Top=555, Left=250, DialogResult=System.Windows.Forms.DialogResult.OK };
-var updateGitHub = new System.Windows.Forms.Button{ Text="Update in GitHub", Width=btnWidth, Top=555, Left=450 };
-var openGitHub = new System.Windows.Forms.Button{ Text="Open GitHub", Width=btnWidth, Top=595, Left=50 };
-var cancel = new System.Windows.Forms.Button{ Text="Cancel", Width=btnWidth, Top=595, Left=450, DialogResult=System.Windows.Forms.DialogResult.Cancel };
+var compare = new System.Windows.Forms.Button { Text="Compare", Width=btnWidth, Top=555, Left=50 };
+var updateModel = new System.Windows.Forms.Button { Text="Update in the Model", Width=btnWidth, Top=555, Left=250, DialogResult=System.Windows.Forms.DialogResult.OK };
+var updateGitHub = new System.Windows.Forms.Button { Text="Update in GitHub", Width=btnWidth, Top=555, Left=450 };
+var openGitHub = new System.Windows.Forms.Button { Text="Open GitHub", Width=btnWidth, Top=595, Left=50 };
+var cancel = new System.Windows.Forms.Button { Text="Cancel", Width=btnWidth, Top=595, Left=450, DialogResult=System.Windows.Forms.DialogResult.Cancel };
 
 
-// =================================
-// UI: Legend Panel
-// =================================
+// ===========================================================================
+// UI: Legend Panel (status explanation)
+// ===========================================================================
 var legend = new System.Windows.Forms.Panel();
 legend.Top = 510;
 legend.Left = 10;
@@ -247,9 +270,9 @@ form.Controls.Add(openGitHub);
 form.Controls.Add(cancel);
 
 
-// =================================
-// Open GitHub button logic
-// =================================
+// ===========================================================================
+// Button: Open GitHub in browser
+// ===========================================================================
 openGitHub.Click += (s, e) =>
 {
     string url = $"https://github.com/{owner}/{repo}/tree/{branch}/UDF";
@@ -268,9 +291,9 @@ openGitHub.Click += (s, e) =>
 };
 
 
-// =================================
-// Helper: Traverse Tree Nodes
-// =================================
+// ===========================================================================
+// Helper: Traverse Tree Nodes recursively
+// ===========================================================================
 void TraverseNodes(System.Windows.Forms.TreeNodeCollection nodes, Action<System.Windows.Forms.TreeNode> action)
 {
     foreach (System.Windows.Forms.TreeNode node in nodes)
@@ -282,10 +305,11 @@ void TraverseNodes(System.Windows.Forms.TreeNodeCollection nodes, Action<System.
 }
 
 
-// =================================
-// Compare logic
-// =================================
-compare.Click += (s,e) => {
+// ===========================================================================
+// Compare logic: check if model vs GitHub functions match
+// ===========================================================================
+compare.Click += (s,e) =>
+{
     var existingNow = new System.Collections.Generic.HashSet<string>(
         Model.Functions.Select(fn => fn.Name),
         StringComparer.OrdinalIgnoreCase
@@ -343,10 +367,11 @@ compare.Click += (s,e) => {
 };
 
 
-// =================================
-// GitHub update logic
-// =================================
-updateGitHub.Click += (s,e) => {
+// ===========================================================================
+// GitHub update logic: push model functions to GitHub
+// ===========================================================================
+updateGitHub.Click += (s,e) =>
+{
     var selected = new System.Collections.Generic.List<dynamic>();
     TraverseNodes(tree.Nodes, node =>
     {
@@ -388,9 +413,9 @@ updateGitHub.Click += (s,e) => {
 };
 
 
-// =================================
-// Run dialog
-// =================================
+// ===========================================================================
+// Run dialog: apply user selections to model
+// ===========================================================================
 if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 {
     var selected = new System.Collections.Generic.List<dynamic>();
