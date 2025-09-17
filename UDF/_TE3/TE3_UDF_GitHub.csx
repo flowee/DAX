@@ -25,10 +25,32 @@
 // ===========================================================================
 // Repository configuration
 // ===========================================================================
-var repoApiUrl = "https://api.github.com/repos/avatorl/DAX/contents/UDF";
 var owner  = "avatorl";
 var repo   = "DAX";
+var folder = "UDF";
 var branch = "master";
+
+// ===========================================================================
+// GitHub URL builders (centralized templates)
+// ===========================================================================
+
+// API URL for reading (with branch ref)
+Func<string, string> GetApiUrl = (path) =>
+    $"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}";
+
+// API URL for uploading (PUT requires branch in body, not in query)
+Func<string, string> GetUploadUrl = (path) =>
+    $"https://api.github.com/repos/{owner}/{repo}/contents/{path}";
+
+// Browser URL for viewing repo folder
+Func<string> GetBrowserUrl = () =>
+    $"https://github.com/{owner}/{repo}/tree/{branch}/{folder}";
+
+// Build path for a .dax file (with optional subfolder)
+Func<dynamic, string> GetFilePath = (f) =>
+    string.IsNullOrEmpty(f.Path)
+        ? $"{folder}/{f.Name}.dax"
+        : $"{folder}/{f.Path.Replace("\\", "/")}/{f.Name}.dax";
 
 
 // ===========================================================================
@@ -137,7 +159,7 @@ Action<string,string,string> UploadToGitHub = (path, code, sha) =>
     try
     {
         var normalized = NormalizeLineEndings(code);
-        string url = $"https://api.github.com/repos/{owner}/{repo}/contents/{path}";
+        string url = GetUploadUrl(path);
 
         var body = new {
             message = "Update UDF from Tabular Editor",
@@ -163,7 +185,7 @@ Action<string,string,string> UploadToGitHub = (path, code, sha) =>
 // ===========================================================================
 // Load functions from GitHub
 // ===========================================================================
-var funcs = GetFuncs(repoApiUrl, "");
+var funcs = GetFuncs(GetApiUrl(folder), "");
 if (funcs.Count == 0)
 {
     System.Windows.Forms.MessageBox.Show("No DAX functions found in the repository.");
@@ -189,7 +211,7 @@ tree.CheckBoxes = true;
 tree.Dock = System.Windows.Forms.DockStyle.Top;
 tree.Height = 500;
 
-var root = new System.Windows.Forms.TreeNode($"{owner}/{repo}/UDF");
+var root = new System.Windows.Forms.TreeNode($"{owner}/{repo}/{folder}");
 tree.Nodes.Add(root);
 
 // Helper: create/find nodes for folder structure
@@ -275,7 +297,7 @@ form.Controls.Add(cancel);
 // ===========================================================================
 openGitHub.Click += (s, e) =>
 {
-    string url = $"https://github.com/{owner}/{repo}/tree/{branch}/UDF";
+    string url = $"https://github.com/{owner}/{repo}/tree/{branch}/{folder}";
     try
     {
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
@@ -327,11 +349,8 @@ compare.Click += (s,e) =>
         {
             try
             {
-                var path = string.IsNullOrEmpty(f.Path)
-                    ? $"UDF/{f.Name}.dax"
-                    : $"UDF/{f.Path.Replace("\\", "/")}/{f.Name}.dax";
-
-                var url = $"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}";
+                var path = GetFilePath(f);
+                var url  = GetApiUrl(path);
                 var json = client.GetStringAsync(url).Result;
                 var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
                 var base64 = (string)obj["content"];
@@ -383,12 +402,10 @@ updateGitHub.Click += (s,e) =>
     {
         try
         {
-            var path = string.IsNullOrEmpty(f.Path) 
-                ? $"UDF/{f.Name}.dax" 
-                : $"UDF/{f.Path.Replace("\\", "/")}/{f.Name}.dax";
-
+         var path = GetFilePath(f);   // centralized builder
             string sha = null;
-            var resp = client.GetAsync($"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}").Result;
+
+            var resp = client.GetAsync(GetApiUrl(path)).Result;
             if (resp.IsSuccessStatusCode)
             {
                 var obj = Newtonsoft.Json.Linq.JObject.Parse(resp.Content.ReadAsStringAsync().Result);
@@ -427,7 +444,12 @@ if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 
     foreach (var f in selected)
     {
-        var dax = DownloadFile(f.Url);
+        var path = GetFilePath(f);
+        var json = client.GetStringAsync(GetApiUrl(path)).Result;
+        var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
+        var base64 = (string)obj["content"];
+        var dax = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+
         if (!string.IsNullOrWhiteSpace(dax))
         {
             var fn = Model.Functions.FirstOrDefault(x => x.Name == f.Name);
