@@ -2,7 +2,10 @@
     _DateColumn: ANYREF EXPR,
     _Value: ANYREF EXPR,
     _SVG_Width: INT64 VAL,
-    _SVG_Height: INT64 VAL
+    _SVG_Height: INT64 VAL,
+    _Color: STRING VAL,
+    _ColorBottom: STRING VAL,
+    _ColorTop: STRING VAL
 ) =>
 VAR _StartDate =
     -- first date of the period
@@ -67,7 +70,6 @@ VAR _LineBack =
     )
 VAR _LastDateValue =
     CALCULATE ( _Value, _SparklineTableEndDate )
-VAR _Color = "#655851"
 VAR _SVG =
     "data:image/svg+xml;utf8," & //
     "<svg xmlns='http://www.w3.org/2000/svg' width='" & _SVG_Width & "' height='" & _SVG_Height & "'>" & //
@@ -76,8 +78,8 @@ VAR _SVG =
     "</clipPath>" & "<clipPath id='clipTop' clipPathUnits='evenodd'>" & //
         "<rect x='0' y='" & _LastPointY & "' width='" & _SVG_Width & "' height='" & _SVG_Height - _LastPointY & "' />" & //
     "</clipPath>" & //
-    "<polyline clip-path='url(#clipBottom)' fill='" & "#655851" & "' fill-opacity='0.4' stroke='" & _Color & "' stroke-width='0.2' points=' " & _Line & _LineBack & " '/>" & //
-    "<polyline clip-path='url(#clipTop)' fill='" & "#666666" & "' fill-opacity='0.4' stroke='" & _Color & "' stroke-width='0.5' points=' " & _Line & _LineBack & " '/>" & //
+    "<polyline clip-path='url(#clipBottom)' fill='" & _ColorBottom & "' fill-opacity='0.4' stroke='" & _Color & "' stroke-width='0.2' points=' " & _Line & _LineBack & " '/>" & //
+    "<polyline clip-path='url(#clipTop)' fill='" & _ColorTop & "' fill-opacity='0.4' stroke='" & _Color & "' stroke-width='0.5' points=' " & _Line & _LineBack & " '/>" & //
     "<polyline fill='" & _Color & "' fill-opacity='0' stroke='" & _Color & "' stroke-width='3' points=' " & _Line & " '/>" & //
     "<circle fill='" & _Color & "' fill-opacity='1' stroke='" & _Color & "' stroke-width='3' " & _LastPoint & " r='3' />" & //
     "<text alignment-baseline='middle' text-anchor='start' font-family='Segoe UI' font-weight='normal' font-size='36' fill='" & _Color & "' " & _LastPointLabel & " >"
