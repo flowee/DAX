@@ -1,4 +1,4 @@
-// generates SVG code
+ // Generates a data:image and wraps the supplied SVG code inside <svg></svg> tags with specified width and height
 (
     _SVG: STRING VAL,  --  SVG code
     _Width: INT64 VAL,  -- width
