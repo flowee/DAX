@@ -1,0 +1,19 @@
+(
+    _Value: ANYREF EXPR,
+    _Suffix: STRING VAL
+) =>
+VAR _NumberFormat =
+    SWITCH (
+        TRUE (),
+        _Value <= 1E3, "#,0.",
+        _Value <= 1E4, "#,0,.00 K",
+        _Value <= 1E5, "#,0,.0 K",
+        _Value <= 1E6, "#,0,. K",
+        _Value <= 1E7, "#,0,,.00 M",
+        _Value <= 1E8, "#,0,,.0 M",
+        _Value <= 1E9, "#,0,,. M"
+    )
+VAR _Result =
+    _NumberFormat & """" & _Suffix & """"
+RETURN
+    _Result
