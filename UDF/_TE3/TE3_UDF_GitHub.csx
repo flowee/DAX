@@ -1,4 +1,4 @@
-// TE3 Macro: TE3 GitHub UDF Manager
+// TE3 Macro: GitHub DAX UDF Manager for TE3
 //    https://github.com/avatorl/DAX/tree/master/UDF/_TE3
 // ===========================================================================
 // Andrzej Leszkiewicz
@@ -136,7 +136,7 @@ var existing = new System.Collections.Generic.HashSet<string>(
 // ---------------------------------------------------------------------
 // UI
 var form = new System.Windows.Forms.Form();
-form.Text = "TE3 GitHub UDF Manager";
+form.Text = "GitHub DAX UDF Manager for TE3";
 form.Width = 700; 
 form.Height = 680;
 
