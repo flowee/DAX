@@ -1,6 +1,5 @@
 // Generate SVG image of Box Plot
-//Copyright: Andrzej Leszkiewicz
-//  LinkedIn: https://linkedin.com/in/avatorl
+// TO BE CONVERTED INTO AN UDF
 // INPUTS ===
 VAR _Height = 550 -- px
 VAR _Width = 100 -- px
