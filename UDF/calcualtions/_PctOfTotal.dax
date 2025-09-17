@@ -1,0 +1,12 @@
+// % of total (for all selected)
+(
+    _Value: ANYREF EXPR
+) =>
+VAR _Total = CALCULATE (
+    _Value,
+    ALLSELECTED ()
+)
+VAR _Result =
+    DIVIDE ( _Value, _Total )
+RETURN
+    _Result
