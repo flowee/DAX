@@ -162,7 +162,7 @@ Action<string,string,string> UploadToGitHub = (path, code, sha) =>
         string url = GetUploadUrl(path);
 
         var body = new {
-            message = "Update UDF from Tabular Editor",
+            message = $"Update UDF '{System.IO.Path.GetFileNameWithoutExtension(path)}' via GitHub DAX UDF Manager for TE3",
             content = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(normalized)),
             branch  = branch,
             sha     = sha
@@ -402,7 +402,7 @@ updateGitHub.Click += (s,e) =>
     {
         try
         {
-         var path = GetFilePath(f);   // centralized builder
+            var path = GetFilePath(f);   // centralized builder
             string sha = null;
 
             var resp = client.GetAsync(GetApiUrl(path)).Result;
@@ -415,9 +415,19 @@ updateGitHub.Click += (s,e) =>
             var fn = Model.Functions.FirstOrDefault(x => x.Name == f.Name);
             if (fn != null)
             {
+                // Always normalize before upload
                 var normalized = NormalizeLineEndings(fn.Expression);
+
+                // Refresh description from first comment line (if present)
+                var lines = normalized.Split(new[] { '\n' }, StringSplitOptions.None);
+                if (lines.Length > 0 && lines[0].TrimStart().StartsWith("//"))
+                {
+                    fn.Description = lines[0].Trim().Substring(2).Trim();
+                }
+
+                // Upload unchanged expression (still includes the comment line)
                 UploadToGitHub(path, normalized, sha);
-                fn.Expression = normalized;
+                fn.Expression = normalized; // keep in sync
             }
         }
         catch (Exception ex)
@@ -429,34 +439,7 @@ updateGitHub.Click += (s,e) =>
     System.Windows.Forms.MessageBox.Show($"Updated {selected.Count} UDF(s) in GitHub.");
 };
 
-
 // ===========================================================================
-// Run dialog: apply user selections to model
+// Run the form
 // ===========================================================================
-if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-{
-    var selected = new System.Collections.Generic.List<dynamic>();
-    TraverseNodes(tree.Nodes, node =>
-    {
-        if (node.Checked && node.Tag != null)
-            selected.Add((dynamic)node.Tag);
-    });
-
-    foreach (var f in selected)
-    {
-        var path = GetFilePath(f);
-        var json = client.GetStringAsync(GetApiUrl(path)).Result;
-        var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
-        var base64 = (string)obj["content"];
-        var dax = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
-
-        if (!string.IsNullOrWhiteSpace(dax))
-        {
-            var fn = Model.Functions.FirstOrDefault(x => x.Name == f.Name);
-            var normalized = NormalizeLineEndings(dax);
-            if (fn == null) Model.AddFunction(f.Name, normalized);
-            else fn.Expression = normalized;
-        }
-    }
-    System.Windows.Forms.MessageBox.Show($"Loaded {selected.Count} UDF(s) into the model.");
-}
+form.ShowDialog();
