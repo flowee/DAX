@@ -42,5 +42,7 @@
   
   Required for accessing both public and private repositories.
 
+  To start using the tool, just copy the C# code into Tabular Editor and save it as a new macro. Create a GitHub access token and save it as an environment variable. Change the GitHub repo parameters if needed.
+
   <img width="686" height="673" alt="image" src="https://github.com/user-attachments/assets/1fd586fd-fbb6-4fe7-941d-a6437027db14" />
 
