@@ -3,7 +3,7 @@
     _Width: INT64 VAL,  -- width
     _Height: INT64 VAL  -- image
 ) =>
-// generate SVG code //
+// generate SVG code // ===
 VAR _SVG_Image_Header = "data:image/svg+xml;utf8,"
 VAR _SVG_Open = "<svg xmlns=""http://www.w3.org/2000/svg"" width='" & _Width & "' height='" & _Height & "' >"
 VAR _SVG_Close = "</svg>"
