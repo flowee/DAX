@@ -6,14 +6,19 @@
 //    https://www.linkedin.com/in/avatorl/
 // ===========================================================================
 
+
+// =================================
+// Repository configuration
+// =================================
 var repoApiUrl = "https://api.github.com/repos/avatorl/DAX/contents/UDF";
 var owner  = "avatorl";
 var repo   = "DAX";
 var branch = "master";
 
-// ---------------------------------------------------------------------
+
+// =================================
 // GitHub Personal Access Token
-//    https://github.com/settings/tokens (permissions: public_repo)
+// =================================
 var githubToken = Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.User)
                 ?? Environment.GetEnvironmentVariable("GITHUB_TOKEN", EnvironmentVariableTarget.Machine);
 if (string.IsNullOrEmpty(githubToken))
@@ -22,8 +27,10 @@ if (string.IsNullOrEmpty(githubToken))
     return;
 }
 
-// ---------------------------------------------------------------------
-// Normalization: only fix line endings + remove leading blank lines
+
+// =================================
+// Normalization: clean line endings
+// =================================
 Func<string, string> normalizeLineEndings = text =>
 {
     if (string.IsNullOrEmpty(text)) return "";
@@ -45,8 +52,9 @@ Func<string, string> normalizeLineEndings = text =>
 };
 
 
-// ---------------------------------------------------------------------
+// =================================
 // Download file from GitHub
+// =================================
 Func<string,string> downloadFile = (url) =>
 {
     using (var client = new System.Net.Http.HttpClient())
@@ -58,8 +66,10 @@ Func<string,string> downloadFile = (url) =>
     }
 };
 
-// ---------------------------------------------------------------------
+
+// =================================
 // Scan repo for .dax files
+// =================================
 Func<string,string,System.Collections.Generic.List<dynamic>> getFuncs = null;
 getFuncs = (apiUrl, relPath) =>
 {
@@ -96,8 +106,10 @@ getFuncs = (apiUrl, relPath) =>
     return list;
 };
 
-// ---------------------------------------------------------------------
+
+// =================================
 // Upload to GitHub
+// =================================
 Action<string,string,string> uploadToGitHub = (path, code, sha) =>
 {
     using (var client = new System.Net.Http.HttpClient())
@@ -123,8 +135,10 @@ Action<string,string,string> uploadToGitHub = (path, code, sha) =>
     }
 };
 
-// ---------------------------------------------------------------------
-// Load all functions
+
+// =================================
+// Load functions from GitHub
+// =================================
 var funcs = getFuncs(repoApiUrl, "");
 if (funcs.Count == 0) { System.Windows.Forms.MessageBox.Show("No DAX functions found."); return; }
 
@@ -133,8 +147,10 @@ var existing = new System.Collections.Generic.HashSet<string>(
     StringComparer.OrdinalIgnoreCase
 );
 
-// ---------------------------------------------------------------------
-// UI
+
+// =================================
+// UI: Form and TreeView
+// =================================
 var form = new System.Windows.Forms.Form();
 form.Text = "GitHub DAX UDF Manager for TE3";
 form.Width = 700; 
@@ -145,37 +161,59 @@ tree.CheckBoxes = true;
 tree.Dock = System.Windows.Forms.DockStyle.Top;
 tree.Height = 500;
 
-foreach (var grp in funcs.GroupBy(f => f.Path).OrderBy(g => g.Key))
+// Root node
+var root = new System.Windows.Forms.TreeNode($"{owner}/{repo}/UDF");
+tree.Nodes.Add(root);
+
+// Helper: create/find nodes
+System.Windows.Forms.TreeNode GetOrCreateNode(System.Windows.Forms.TreeNodeCollection nodes, string name)
 {
-    var folderName = string.IsNullOrEmpty(grp.Key) 
-        ? $"{owner}/{repo}/UDF"
-        : grp.Key;
+    foreach (System.Windows.Forms.TreeNode n in nodes)
+        if (n.Text == name) return n;
 
-    var folder = new System.Windows.Forms.TreeNode(folderName);
-
-    foreach (var f in grp)
-    {
-        var node = new System.Windows.Forms.TreeNode(f.Name);
-        node.Tag = f;
-        if (existing.Contains(f.Name))
-            node.NodeFont = new System.Drawing.Font(tree.Font, System.Drawing.FontStyle.Bold);
-        folder.Nodes.Add(node);
-    }
-    tree.Nodes.Add(folder);
+    var newNode = new System.Windows.Forms.TreeNode(name);
+    nodes.Add(newNode);
+    return newNode;
 }
-tree.ExpandAll();
 
-// ---------------------------------------------------------------------
-// Buttons
+// Build tree
+foreach (var f in funcs.OrderBy(x => x.Path).ThenBy(x => x.Name))
+{
+    var pathParts = string.IsNullOrEmpty(f.Path)
+        ? Array.Empty<string>()
+        : f.Path.Split(new[] { '\\' }, StringSplitOptions.RemoveEmptyEntries);
+
+    var current = root.Nodes;
+    foreach (var part in pathParts)
+        current = GetOrCreateNode(current, part).Nodes;
+
+    var node = new System.Windows.Forms.TreeNode(f.Name) { Tag = f };
+    if (existing.Contains(f.Name))
+        node.NodeFont = new System.Drawing.Font(tree.Font, System.Drawing.FontStyle.Bold);
+
+    current.Add(node);
+}
+
+tree.ExpandAll();
+form.Controls.Add(tree);
+
+
+// =================================
+// UI: Buttons
+// =================================
 var btnWidth = 180;
 var compare = new System.Windows.Forms.Button{ Text="Compare", Width=btnWidth, Top=555, Left=50 };
 var updateModel = new System.Windows.Forms.Button{ Text="Update in the Model", Width=btnWidth, Top=555, Left=250, DialogResult=System.Windows.Forms.DialogResult.OK };
 var updateGitHub = new System.Windows.Forms.Button{ Text="Update in GitHub", Width=btnWidth, Top=555, Left=450 };
+var openGitHub = new System.Windows.Forms.Button{ Text="Open GitHub", Width=btnWidth, Top=595, Left=50 };
 var cancel = new System.Windows.Forms.Button{ Text="Cancel", Width=btnWidth, Top=595, Left=450, DialogResult=System.Windows.Forms.DialogResult.Cancel };
 
 form.Controls.Add(tree);
 
-// Legend panel
+
+// =================================
+// UI: Legend Panel
+// =================================
 var legend = new System.Windows.Forms.Panel();
 legend.Top = 510;
 legend.Left = 10;
@@ -201,92 +239,131 @@ AddLegendItem("Red = differs", System.Drawing.Color.Red, System.Drawing.FontStyl
 
 form.Controls.Add(legend);
 
-// Buttons
+
+// =================================
+// Add buttons to form
+// =================================
 form.Controls.Add(updateModel);
 form.Controls.Add(updateGitHub);
 form.Controls.Add(compare);
+form.Controls.Add(openGitHub);
 form.Controls.Add(cancel);
 
 
-// ---------------------------------------------------------------------
+// =================================
+// Open GitHub button logic
+// =================================
+openGitHub.Click += (s, e) =>
+{
+    string url = $"https://github.com/{owner}/{repo}/tree/{branch}/UDF";
+    try
+    {
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = url,
+            UseShellExecute = true
+        });
+    }
+    catch (Exception ex)
+    {
+        System.Windows.Forms.MessageBox.Show($"Error opening GitHub: {ex.Message}");
+    }
+};
+
+
+// =================================
+// Helper: Traverse Tree Nodes
+// =================================
+void TraverseNodes(System.Windows.Forms.TreeNodeCollection nodes, Action<System.Windows.Forms.TreeNode> action)
+{
+    foreach (System.Windows.Forms.TreeNode node in nodes)
+    {
+        action(node);
+        if (node.Nodes.Count > 0)
+            TraverseNodes(node.Nodes, action);
+    }
+}
+
+
+// =================================
 // Compare logic
+// =================================
 compare.Click += (s,e) => {
     var existingNow = new System.Collections.Generic.HashSet<string>(
         Model.Functions.Select(fn => fn.Name),
         StringComparer.OrdinalIgnoreCase
     );
 
-    foreach (System.Windows.Forms.TreeNode folder in tree.Nodes)
+    TraverseNodes(tree.Nodes, node =>
     {
-        foreach (System.Windows.Forms.TreeNode node in folder.Nodes)
+        node.ForeColor = System.Drawing.Color.Black;
+        node.ToolTipText = "";
+
+        if (node.Tag == null) return; // skip folders
+
+        dynamic f = node.Tag;
+        if (existingNow.Contains((string)f.Name))
         {
-            node.ForeColor = System.Drawing.Color.Black;
-            node.ToolTipText = "";
-
-            if (node.Tag == null) continue;
-
-            dynamic f = node.Tag;
-            if (existingNow.Contains((string)f.Name))
+            try
             {
-                try
+                var path = string.IsNullOrEmpty(f.Path)
+                    ? $"UDF/{f.Name}.dax"
+                    : $"UDF/{f.Path.Replace("\\", "/")}/{f.Name}.dax";
+
+                string code;
+                using (var client = new System.Net.Http.HttpClient())
                 {
-                    // Build GitHub API URL (branch aware)
-                    var path = string.IsNullOrEmpty(f.Path)
-                        ? $"UDF/{f.Name}.dax"
-                        : $"UDF/{f.Path.Replace("\\", "/")}/{f.Name}.dax";
+                    client.DefaultRequestHeaders.Add("User-Agent", "TabularEditor3");
+                    if (!string.IsNullOrEmpty(githubToken))
+                        client.DefaultRequestHeaders.Add("Authorization", $"token {githubToken}");
 
-                    string code;
-                    using (var client = new System.Net.Http.HttpClient())
-                    {
-                        client.DefaultRequestHeaders.Add("User-Agent", "TabularEditor3");
-                        if (!string.IsNullOrEmpty(githubToken))
-                            client.DefaultRequestHeaders.Add("Authorization", $"token {githubToken}");
-
-                        string url = $"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}";
-                        var json = client.GetStringAsync(url).Result;
-                        var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
-                        var base64 = (string)obj["content"];
-                        code = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
-                    }
-
-                    var modelFn = Model.Functions
-                        .FirstOrDefault(fn => fn.Name.Equals(f.Name, StringComparison.OrdinalIgnoreCase));
-
-                    if (modelFn != null)
-                    {
-                        var repoCode  = normalizeLineEndings(code);
-                        var modelCode = normalizeLineEndings(modelFn.Expression);
-
-                        if (modelCode == repoCode)
-                        {
-                            node.ForeColor = System.Drawing.Color.Green;
-                            node.ToolTipText = "Match between model and GitHub";
-                        }
-                        else
-                        {
-                            node.ForeColor = System.Drawing.Color.Red;
-                            node.ToolTipText = "Code differs between model and GitHub";
-                        }
-                    }
+                    string url = $"https://api.github.com/repos/{owner}/{repo}/contents/{path}?ref={branch}";
+                    var json = client.GetStringAsync(url).Result;
+                    var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
+                    var base64 = (string)obj["content"];
+                    code = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(base64));
                 }
-                catch (Exception ex)
+
+                var modelFn = Model.Functions
+                    .FirstOrDefault(fn => fn.Name.Equals(f.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (modelFn != null)
                 {
-                    node.ForeColor = System.Drawing.Color.DarkOrange;
-                    node.ToolTipText = $"Error comparing: {ex.Message}";
+                    var repoCode  = normalizeLineEndings(code);
+                    var modelCode = normalizeLineEndings(modelFn.Expression);
+
+                    if (modelCode == repoCode)
+                    {
+                        node.ForeColor = System.Drawing.Color.Green;
+                        node.ToolTipText = "Match between model and GitHub";
+                    }
+                    else
+                    {
+                        node.ForeColor = System.Drawing.Color.Red;
+                        node.ToolTipText = "Code differs between model and GitHub";
+                    }
                 }
             }
+            catch (Exception ex)
+            {
+                node.ForeColor = System.Drawing.Color.DarkOrange;
+                node.ToolTipText = $"Error comparing: {ex.Message}";
+            }
         }
-    }
+    });
 };
 
-// ---------------------------------------------------------------------
+
+// =================================
 // GitHub update logic
+// =================================
 updateGitHub.Click += (s,e) => {
     var selected = new System.Collections.Generic.List<dynamic>();
-    foreach (System.Windows.Forms.TreeNode folder in tree.Nodes)
-        foreach (System.Windows.Forms.TreeNode node in folder.Nodes)
-            if (node.Checked && node.Tag != null)
-                selected.Add((dynamic)node.Tag);
+    TraverseNodes(tree.Nodes, node =>
+    {
+        if (node.Checked && node.Tag != null)
+            selected.Add((dynamic)node.Tag);
+    });
 
     foreach (var f in selected)
     {
@@ -313,13 +390,10 @@ updateGitHub.Click += (s,e) => {
             var fn = Model.Functions.FirstOrDefault(x => x.Name == f.Name);
             if (fn != null)
             {
-                // Normalize exactly the same way for upload
                 var normalized = normalizeLineEndings(fn.Expression);
 
-                // Upload
                 uploadToGitHub(path, normalized, sha);
 
-                // Set the model expression to the *same normalized text* we just pushed
                 fn.Expression = normalized;
             }
 
@@ -333,15 +407,18 @@ updateGitHub.Click += (s,e) => {
     System.Windows.Forms.MessageBox.Show($"Updated {selected.Count} UDF(s) in GitHub.");
 };
 
-// ---------------------------------------------------------------------
+
+// =================================
 // Run dialog
+// =================================
 if (form.ShowDialog() == System.Windows.Forms.DialogResult.OK)
 {
     var selected = new System.Collections.Generic.List<dynamic>();
-    foreach (System.Windows.Forms.TreeNode folder in tree.Nodes)
-        foreach (System.Windows.Forms.TreeNode node in folder.Nodes)
-            if (node.Checked && node.Tag != null)
-                selected.Add((dynamic)node.Tag);
+    TraverseNodes(tree.Nodes, node =>
+    {
+        if (node.Checked && node.Tag != null)
+            selected.Add((dynamic)node.Tag);
+    });
 
     foreach (var f in selected)
     {
