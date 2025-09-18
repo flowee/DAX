@@ -214,7 +214,7 @@ Action<string,string,string> UploadToGitHub = (path, code, sha) =>
 // ===========================================================================
 var form = new System.Windows.Forms.Form();
 form.Text = "GitHub DAX UDF Manager for TE3";
-form.Width = 720;
+form.Width = 680;
 form.Height = 720;
 form.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 form.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -261,11 +261,12 @@ void AddLegendItem(string text, System.Drawing.Color color, System.Drawing.FontS
 }
 
 // Legend items: explains node colors/fonts
-AddLegendItem("Normal = not in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Regular);
-AddLegendItem("Bold = exists in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Bold);
-AddLegendItem("Green = match", System.Drawing.Color.Green, System.Drawing.FontStyle.Bold);
-AddLegendItem("Red = differs", System.Drawing.Color.Red, System.Drawing.FontStyle.Bold);
-AddLegendItem("Blue = model-only UDF", System.Drawing.Color.Blue, System.Drawing.FontStyle.Bold);
+AddLegendItem("not in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Regular);
+AddLegendItem("exists in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Bold);
+AddLegendItem("match", System.Drawing.Color.Green, System.Drawing.FontStyle.Bold);
+AddLegendItem("differs", System.Drawing.Color.Red, System.Drawing.FontStyle.Bold);
+AddLegendItem("deleted", System.Drawing.Color.DarkOrange, System.Drawing.FontStyle.Bold);
+AddLegendItem("model-only UDF", System.Drawing.Color.Blue, System.Drawing.FontStyle.Bold);
 
 layout.Controls.Add(legend, 0, 1);
 
