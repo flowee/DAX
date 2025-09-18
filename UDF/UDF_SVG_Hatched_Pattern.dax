@@ -1,0 +1,15 @@
+
+()
+=>
+"/*hatched pattern*/
+    <defs >
+    <pattern id='diagonal-stripe' patternUnits='userSpaceOnUse' width='8' height='8'>
+        /*white background*/<rect x='0' y='0' width='8' height='8' fill='#FFFFFF' stroke-width='0'/>
+        /*black stripes*/
+        <path d='
+            M-2,2 l4,-4
+            M0,8 l8,-8
+            M6,10 l4,-4'
+        style='stroke:black; stroke-width:2' />
+    </pattern>
+    </defs>"
