@@ -1,0 +1,12 @@
+ // Generates a data:image and wraps the supplied SVG code inside <svg></svg> tags with specified width and height
+(
+    _SVG: STRING VAL,  --  SVG code
+    _Width: INT64 VAL,  -- width
+    _Height: INT64 VAL  -- image
+) =>
+VAR _SVG_Image_Header = "data:image/svg+xml;utf8,"
+VAR _SVG_Open = "<svg xmlns=""http://www.w3.org/2000/svg"" width='" & _Width & "' height='" & _Height & "' >"
+VAR _SVG_Close = "</svg>"
+VAR _SVG_Result = _SVG_Image_Header & _SVG_Open & _SVG & _SVG_Close
+RETURN
+    _SVG_Result
