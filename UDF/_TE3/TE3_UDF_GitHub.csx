@@ -261,6 +261,7 @@ void AddLegendItem(string text, System.Drawing.Color color, System.Drawing.FontS
 }
 
 // Legend items: explains node colors/fonts
+AddLegendItem("Legend: ", System.Drawing.Color.Black, System.Drawing.FontStyle.Regular);
 AddLegendItem("not in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Regular);
 AddLegendItem("exists in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Bold);
 AddLegendItem("match", System.Drawing.Color.Green, System.Drawing.FontStyle.Bold);
