@@ -441,23 +441,99 @@ createGitHub.Click += (s, e) =>
             selected.Add(fn);
     });
 
-    // Abort if nothing selected
     if (selected.Count == 0)
     {
         System.Windows.Forms.MessageBox.Show("No model-only UDFs selected.");
         return;
     }
 
+    // ============================
+    // Build Folder Picker dialog
+    // ============================
+    var folderForm = new System.Windows.Forms.Form();
+    folderForm.Text = "Select GitHub Destination Folder";
+    folderForm.Width = 400;
+    folderForm.Height = 500;
+    folderForm.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+
+    var folderTree = new System.Windows.Forms.TreeView();
+    folderTree.Dock = System.Windows.Forms.DockStyle.Fill;
+    folderTree.FullRowSelect = true;
+    folderTree.HideSelection = false;
+
+    var okButton = new System.Windows.Forms.Button { Text = "OK", Dock = System.Windows.Forms.DockStyle.Bottom, DialogResult = System.Windows.Forms.DialogResult.OK };
+    folderForm.Controls.Add(folderTree);
+    folderForm.Controls.Add(okButton);
+    folderForm.AcceptButton = okButton;
+
+ // Helper: Recursively load folder structure from GitHub
+Action<string, string, System.Windows.Forms.TreeNode> LoadFolders = null;
+LoadFolders = (apiUrl, relPath, parentNode) =>
+{
+    try
+    {
+        var responseText = client.GetStringAsync(apiUrl).Result;
+        var items = Newtonsoft.Json.Linq.JArray.Parse(responseText);
+
+        foreach (var item in items)
+        {
+            var type = item["type"]?.ToString();
+            var name = item["name"]?.ToString() ?? "";
+
+            if (type == "dir")
+            {
+                var nextApi = item["url"]?.ToString();
+                var nextRel = string.IsNullOrEmpty(relPath) ? name : $"{relPath}/{name}";
+
+                var dirNode = new System.Windows.Forms.TreeNode(name);
+                dirNode.Tag = nextRel;
+
+                parentNode.Nodes.Add(dirNode);
+
+                // ❌ Wrong: dirNode.BeforeExpand (doesn't exist)
+                // ✅ Instead, load recursively now
+                LoadFolders(nextApi, nextRel, dirNode);
+            }
+        }
+    }
+    catch (System.Exception ex)
+    {
+        System.Diagnostics.Debug.WriteLine("LoadFolders error: " + ex);
+    }
+};
+
+
+    // Root node for the repo folder
+    var rootNode = new System.Windows.Forms.TreeNode($"{owner}/{repo}/{folder}") { Tag = folder };
+    folderTree.Nodes.Add(rootNode);
+    LoadFolders(GetApiUrl(folder), folder, rootNode);
+    rootNode.Expand();
+
+    // Show dialog
+    string chosenFolder = null;
+    if (folderForm.ShowDialog(form) == System.Windows.Forms.DialogResult.OK && folderTree.SelectedNode != null)
+    {
+        chosenFolder = folderTree.SelectedNode.Tag as string;
+    }
+
+    if (string.IsNullOrEmpty(chosenFolder))
+    {
+        System.Windows.Forms.MessageBox.Show("No folder selected. Aborting.");
+        return;
+    }
+
+    // ============================
+    // Create files in GitHub
+    // ============================
     WithWaitCursor(form, () =>
     {
         int createdOrUpdated = 0;
 
-        // Process each selected model-only UDF
         foreach (var fn in selected)
         {
             try
             {
-                var path = $"{folder}/{fn.Name}.dax";
+                var path = $"{chosenFolder}/{fn.Name}.dax";
                 string sha = null;
 
                 // Check if file already exists in GitHub
@@ -467,36 +543,34 @@ createGitHub.Click += (s, e) =>
                     var obj = Newtonsoft.Json.Linq.JObject.Parse(checkResp.Content.ReadAsStringAsync().Result);
                     sha = (string)obj["sha"];
 
-                    // Ask user whether to overwrite
+                    // Ask overwrite
                     var ans = System.Windows.Forms.MessageBox.Show(
-                        $"'{fn.Name}.dax' already exists in GitHub.\nDo you want to overwrite it?",
+                        $"'{fn.Name}.dax' already exists in GitHub at {chosenFolder}.\nDo you want to overwrite it?",
                         "File exists",
                         System.Windows.Forms.MessageBoxButtons.YesNoCancel,
                         System.Windows.Forms.MessageBoxIcon.Question);
 
-                    if (ans == System.Windows.Forms.DialogResult.Cancel) return; // cancel all
-                    if (ans == System.Windows.Forms.DialogResult.No) continue;   // skip this one
-                    // Yes → continue and overwrite
+                    if (ans == System.Windows.Forms.DialogResult.Cancel) return; 
+                    if (ans == System.Windows.Forms.DialogResult.No) continue;
                 }
 
-                // Upload to GitHub (create or update)
+                // Upload
                 var normalized = NormalizeLineEndings(fn.Expression);
                 UploadToGitHub(path, normalized, sha);
                 createdOrUpdated++;
             }
             catch (System.Exception ex)
             {
-                // Show error per function
                 System.Diagnostics.Debug.WriteLine("CreateGitHub error: " + ex);
                 System.Windows.Forms.MessageBox.Show($"Error creating {fn.Name}: {ex.Message}");
             }
         }
 
-        // Refresh tree and notify user
         RefreshTree();
         System.Windows.Forms.MessageBox.Show($"Created/updated {createdOrUpdated} UDF(s) in GitHub.");
     });
 };
+
 
 
 // ===========================================================================
