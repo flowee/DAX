@@ -23,6 +23,7 @@
 
 // ===========================================================================
 // Repository configuration
+// These define the GitHub repo location used by this macro
 // ===========================================================================
 var owner  = "avatorl";
 var repo   = "DAX";
@@ -35,12 +36,14 @@ var branch = "master";
 // ===========================================================================
 Func<string, string> UrlEncode = s => System.Uri.EscapeDataString(s ?? "");
 
+// Helper to trim long strings (e.g., error messages)
 Func<string, string> Truncate = (text) =>
 {
     if (string.IsNullOrEmpty(text)) return "";
     return text.Length <= 300 ? text : text.Substring(0, 300) + "...";
 };
 
+// Helper to temporarily show a Wait cursor during long operations
 Action<System.Windows.Forms.Control, System.Action> WithWaitCursor = (ctl, action) =>
 {
     var old = ctl.Cursor;
@@ -68,6 +71,7 @@ Func<string, string> GetUploadUrl = (path) =>
 Func<string> GetBrowserUrl = () =>
     $"https://github.com/{owner}/{repo}/tree/{branch}/{folder}";
 
+// Build a normalized file path from repo object
 Func<dynamic, string> GetFilePath = (f) =>
     string.IsNullOrEmpty(f.Path)
         ? $"{folder}/{f.Name}.dax"
@@ -76,10 +80,12 @@ Func<dynamic, string> GetFilePath = (f) =>
 
 // ===========================================================================
 // GitHub Token (required)
+// Reads token from environment variables, else aborts
 // ===========================================================================
 var githubToken = System.Environment.GetEnvironmentVariable("GITHUB_TOKEN", System.EnvironmentVariableTarget.User)
                 ?? System.Environment.GetEnvironmentVariable("GITHUB_TOKEN", System.EnvironmentVariableTarget.Machine);
 
+// Abort if token is missing
 if (string.IsNullOrEmpty(githubToken))
 {
     System.Windows.Forms.MessageBox.Show("⚠️ Missing GitHub token. Please set GITHUB_TOKEN as an environment variable.");
@@ -89,6 +95,7 @@ if (string.IsNullOrEmpty(githubToken))
 
 // ===========================================================================
 // HttpClient (shared instance for all requests)
+// Always reuse single HttpClient for performance
 // ===========================================================================
 var client = new System.Net.Http.HttpClient();
 client.DefaultRequestHeaders.Clear();
@@ -105,10 +112,10 @@ Func<string, string> NormalizeLineEndings = text =>
 {
     if (string.IsNullOrEmpty(text)) return "";
 
-    // Normalize CRLF/CR to LF
+    // Normalize CRLF/CR → LF
     var norm = text.Replace("\r\n", "\n").Replace("\r", "\n");
 
-    // Trim trailing spaces on each line (keeps leading newlines intact)
+    // Trim trailing spaces on each line (but keep leading newlines intact)
     norm = string.Join("\n", norm.Split('\n').Select(line => line.TrimEnd()));
 
     // Ensure trailing newline for consistency
@@ -126,20 +133,24 @@ System.Collections.Generic.List<dynamic> GetFuncs(string apiUrl, string relPath)
     var list = new System.Collections.Generic.List<dynamic>();
     try
     {
+        // Call GitHub API
         var responseText = client.GetStringAsync(apiUrl).Result;
         var items = Newtonsoft.Json.Linq.JArray.Parse(responseText);
 
+        // Loop over each item returned by GitHub
         foreach (var item in items)
         {
             var type = item["type"]?.ToString();
             var name = item["name"]?.ToString() ?? "";
 
+            // If directory → recurse deeper
             if (type == "dir")
             {
                 var nextApi = item["url"]?.ToString();
                 var nextRel = string.IsNullOrEmpty(relPath) ? name : $"{relPath}/{name}";
                 list.AddRange(GetFuncs(nextApi, nextRel));
             }
+            // If file ends with .dax → capture metadata
             else if (type == "file" && name.EndsWith(".dax", System.StringComparison.OrdinalIgnoreCase))
             {
                 list.Add(new {
@@ -152,6 +163,7 @@ System.Collections.Generic.List<dynamic> GetFuncs(string apiUrl, string relPath)
     }
     catch (System.Exception ex)
     {
+        // On failure, show error message
         System.Diagnostics.Debug.WriteLine("GetFuncs error: " + ex);
         System.Windows.Forms.MessageBox.Show($"Error scanning repo: {ex.Message}");
     }
@@ -162,14 +174,17 @@ System.Collections.Generic.List<dynamic> GetFuncs(string apiUrl, string relPath)
 
 // ===========================================================================
 // Helper: Upload updated/new file to GitHub
+// Handles both create and update scenarios
 // ===========================================================================
 Action<string,string,string> UploadToGitHub = (path, code, sha) =>
 {
     try
     {
+        // Normalize code before upload
         var normalized = NormalizeLineEndings(code);
         var url = GetUploadUrl(path);
 
+        // Request body for GitHub API
         var body = new {
             message = $"Update UDF '{System.IO.Path.GetFileNameWithoutExtension(path)}' via GitHub DAX UDF Manager for TE3",
             content = System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(normalized)),
@@ -181,11 +196,13 @@ Action<string,string,string> UploadToGitHub = (path, code, sha) =>
         var resp = client.PutAsync(url, new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json")).Result;
         var respText = resp.Content.ReadAsStringAsync().Result;
 
+        // Throw if GitHub rejected the update
         if (!resp.IsSuccessStatusCode)
             throw new System.Exception($"{(int)resp.StatusCode} {resp.ReasonPhrase}: {Truncate(respText)}");
     }
     catch (System.Exception ex)
     {
+        // Show friendly error
         System.Diagnostics.Debug.WriteLine("UploadToGitHub error: " + ex);
         System.Windows.Forms.MessageBox.Show($"Error uploading to GitHub: {ex.Message}");
     }
@@ -202,7 +219,7 @@ form.Height = 720;
 form.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
 form.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 
-// TableLayout: Row0 Tree (100%), Row1 Legend (Auto), Row2 Buttons (Auto)
+// TableLayout with 3 rows: TreeView (fill), Legend (auto), Buttons (auto)
 var layout = new System.Windows.Forms.TableLayoutPanel();
 layout.Dock = System.Windows.Forms.DockStyle.Fill;
 layout.ColumnCount = 1;
@@ -212,12 +229,13 @@ layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.Size
 layout.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.AutoSize));
 form.Controls.Add(layout);
 
+// TreeView: displays repo UDFs and model-only UDFs
 var tree = new System.Windows.Forms.TreeView();
-tree.CheckBoxes = true;
+tree.CheckBoxes = true;         // allow selection
 tree.Dock = System.Windows.Forms.DockStyle.Fill;
-tree.HideSelection = false;
-tree.FullRowSelect = true;
-tree.ShowNodeToolTips = true;
+tree.HideSelection = false;     // keep selection visible when focus lost
+tree.FullRowSelect = true;      // select entire row
+tree.ShowNodeToolTips = true;   // show tooltips on hover
 layout.Controls.Add(tree, 0, 0);
 
 
@@ -230,6 +248,7 @@ legend.Dock = System.Windows.Forms.DockStyle.Fill;
 legend.WrapContents = false;
 legend.Padding = new System.Windows.Forms.Padding(8, 6, 8, 6);
 
+// Helper to add legend items with consistent style
 void AddLegendItem(string text, System.Drawing.Color color, System.Drawing.FontStyle style)
 {
     var lbl = new System.Windows.Forms.Label();
@@ -241,6 +260,7 @@ void AddLegendItem(string text, System.Drawing.Color color, System.Drawing.FontS
     legend.Controls.Add(lbl);
 }
 
+// Legend items: explains node colors/fonts
 AddLegendItem("Normal = not in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Regular);
 AddLegendItem("Bold = exists in model", System.Drawing.Color.Black, System.Drawing.FontStyle.Bold);
 AddLegendItem("Green = match", System.Drawing.Color.Green, System.Drawing.FontStyle.Bold);
@@ -257,10 +277,9 @@ var buttons = new System.Windows.Forms.FlowLayoutPanel();
 buttons.FlowDirection = System.Windows.Forms.FlowDirection.RightToLeft;
 buttons.Dock = System.Windows.Forms.DockStyle.Fill;
 buttons.AutoSize = true;
+buttons.Padding = new System.Windows.Forms.Padding(0, 8, 8, 8); // spacing
 
-// Panel: only top/bottom padding, no left gap
-buttons.Padding = new System.Windows.Forms.Padding(0, 8, 8, 8);
-
+// Define all action buttons
 var compare     = new System.Windows.Forms.Button { Text="Compare", AutoSize = true };
 var updateModel = new System.Windows.Forms.Button { Text="Update in the Model", AutoSize = true };
 var updateGitHub= new System.Windows.Forms.Button { Text="Update in GitHub", AutoSize = true };
@@ -268,7 +287,7 @@ var createGitHub= new System.Windows.Forms.Button { Text="Create in GitHub", Aut
 var openGitHub  = new System.Windows.Forms.Button { Text="Open GitHub", AutoSize = true };
 var cancel      = new System.Windows.Forms.Button { Text="Close", AutoSize = true, DialogResult = System.Windows.Forms.DialogResult.Cancel };
 
-// Add buttons in reverse order (because of RightToLeft flow)
+// Add in reverse order so Close ends on far right
 buttons.Controls.Add(cancel);
 buttons.Controls.Add(openGitHub);
 buttons.Controls.Add(createGitHub);
@@ -276,15 +295,14 @@ buttons.Controls.Add(updateGitHub);
 buttons.Controls.Add(updateModel);
 buttons.Controls.Add(compare);
 
-// Ensure buttons don't add their own extra left margin (apply *after* adding)
+// Ensure even spacing between all buttons
 foreach (System.Windows.Forms.Control ctrl in buttons.Controls)
 {
     ctrl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
 }
 
 layout.Controls.Add(buttons, 0, 2);
-
-form.CancelButton = cancel; // Esc closes
+form.CancelButton = cancel; // Esc key closes form
 
 
 // ===========================================================================
@@ -294,20 +312,23 @@ Action RefreshTree = () =>
 {
     WithWaitCursor(form, () =>
     {
+        // Load UDFs from GitHub
         var funcs = GetFuncs(GetApiUrl(folder), "");
+
+        // Collect model function names for comparison
         var existing = new System.Collections.Generic.HashSet<string>(
             Model.Functions.Select(f => f.Name),
             System.StringComparer.OrdinalIgnoreCase
         );
 
-        tree.BeginUpdate();
+        tree.BeginUpdate(); // freeze redraw for performance
         try
         {
             tree.Nodes.Clear();
             var root = new System.Windows.Forms.TreeNode($"{owner}/{repo}/{folder}");
             tree.Nodes.Add(root);
 
-            // Helper: create/find child node by text
+            // Helper to find existing node or create new one
             System.Windows.Forms.TreeNode GetOrCreateNode(System.Windows.Forms.TreeNodeCollection nodes, string name)
             {
                 foreach (System.Windows.Forms.TreeNode n in nodes)
@@ -317,7 +338,7 @@ Action RefreshTree = () =>
                 return newNode;
             }
 
-            // Build repo branch
+            // Build repo branch with folder hierarchy
             foreach (var f in funcs.OrderBy(x => x.Path).ThenBy(x => x.Name))
             {
                 var pathParts = string.IsNullOrEmpty(f.Path)
@@ -329,6 +350,8 @@ Action RefreshTree = () =>
                     current = GetOrCreateNode(current, part).Nodes;
 
                 var node = new System.Windows.Forms.TreeNode(f.Name) { Tag = f };
+
+                // Bold font if function exists in model
                 if (existing.Contains(f.Name))
                     node.NodeFont = new System.Drawing.Font(tree.Font, System.Drawing.FontStyle.Bold);
 
@@ -339,6 +362,7 @@ Action RefreshTree = () =>
             var modelOnlyRoot = new System.Windows.Forms.TreeNode("Model-only UDFs");
             tree.Nodes.Add(modelOnlyRoot);
 
+            // For each model UDF not found in repo → mark as blue
             foreach (var fn in Model.Functions)
             {
                 if (!funcs.Any(f => string.Equals(f.Name, fn.Name, System.StringComparison.OrdinalIgnoreCase)))
@@ -359,18 +383,21 @@ Action RefreshTree = () =>
     });
 };
 
-// Initial load
+// Initial load of tree
 RefreshTree();
 
 
 // ===========================================================================
 // Helper: Traverse tree recursively
+// Applies an action to every node in the tree
 // ===========================================================================
 void TraverseNodes(System.Windows.Forms.TreeNodeCollection nodes, System.Action<System.Windows.Forms.TreeNode> action)
 {
     foreach (System.Windows.Forms.TreeNode node in nodes)
     {
         action(node);
+
+        // Recurse into child nodes if present
         if (node.Nodes.Count > 0)
             TraverseNodes(node.Nodes, action);
     }
@@ -384,6 +411,7 @@ openGitHub.Click += (s, e) =>
 {
     try
     {
+        // Open repo URL in default browser
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
             FileName = GetBrowserUrl(),
@@ -392,6 +420,7 @@ openGitHub.Click += (s, e) =>
     }
     catch (System.Exception ex)
     {
+        // Show error if opening fails
         System.Diagnostics.Debug.WriteLine("Open GitHub error: " + ex);
         System.Windows.Forms.MessageBox.Show($"Error opening GitHub: {ex.Message}");
     }
@@ -399,10 +428,12 @@ openGitHub.Click += (s, e) =>
 
 
 // ===========================================================================
-// Button: Create GitHub files for model-only UDFs (with existence check)
+// Button: Create GitHub files for model-only UDFs
+// Includes overwrite confirmation if file already exists
 // ===========================================================================
 createGitHub.Click += (s, e) =>
 {
+    // Collect all selected model-only UDFs
     var selected = new System.Collections.Generic.List<TabularEditor.TOMWrapper.Function>();
     TraverseNodes(tree.Nodes, node =>
     {
@@ -410,6 +441,7 @@ createGitHub.Click += (s, e) =>
             selected.Add(fn);
     });
 
+    // Abort if nothing selected
     if (selected.Count == 0)
     {
         System.Windows.Forms.MessageBox.Show("No model-only UDFs selected.");
@@ -420,6 +452,7 @@ createGitHub.Click += (s, e) =>
     {
         int createdOrUpdated = 0;
 
+        // Process each selected model-only UDF
         foreach (var fn in selected)
         {
             try
@@ -427,36 +460,39 @@ createGitHub.Click += (s, e) =>
                 var path = $"{folder}/{fn.Name}.dax";
                 string sha = null;
 
-                // Check if file exists
+                // Check if file already exists in GitHub
                 var checkResp = client.GetAsync(GetApiUrl(path)).Result;
                 if (checkResp.IsSuccessStatusCode)
                 {
                     var obj = Newtonsoft.Json.Linq.JObject.Parse(checkResp.Content.ReadAsStringAsync().Result);
                     sha = (string)obj["sha"];
 
-                    // Ask for overwrite
+                    // Ask user whether to overwrite
                     var ans = System.Windows.Forms.MessageBox.Show(
                         $"'{fn.Name}.dax' already exists in GitHub.\nDo you want to overwrite it?",
                         "File exists",
                         System.Windows.Forms.MessageBoxButtons.YesNoCancel,
                         System.Windows.Forms.MessageBoxIcon.Question);
 
-                    if (ans == System.Windows.Forms.DialogResult.Cancel) return; // abort whole operation
+                    if (ans == System.Windows.Forms.DialogResult.Cancel) return; // cancel all
                     if (ans == System.Windows.Forms.DialogResult.No) continue;   // skip this one
-                    // Yes → proceed with existing sha
+                    // Yes → continue and overwrite
                 }
 
+                // Upload to GitHub (create or update)
                 var normalized = NormalizeLineEndings(fn.Expression);
                 UploadToGitHub(path, normalized, sha);
                 createdOrUpdated++;
             }
             catch (System.Exception ex)
             {
+                // Show error per function
                 System.Diagnostics.Debug.WriteLine("CreateGitHub error: " + ex);
                 System.Windows.Forms.MessageBox.Show($"Error creating {fn.Name}: {ex.Message}");
             }
         }
 
+        // Refresh tree and notify user
         RefreshTree();
         System.Windows.Forms.MessageBox.Show($"Created/updated {createdOrUpdated} UDF(s) in GitHub.");
     });
@@ -464,7 +500,8 @@ createGitHub.Click += (s, e) =>
 
 
 // ===========================================================================
-// Button: Compare model vs GitHub (with small content cache)
+// Button: Compare model vs GitHub
+// Marks matches (green), diffs (red), errors (orange)
 // ===========================================================================
 compare.Click += (s, e) =>
 {
@@ -475,11 +512,12 @@ compare.Click += (s, e) =>
             System.StringComparer.OrdinalIgnoreCase
         );
 
-        // ephemeral cache for this compare run
+        // Temporary cache for file contents during compare
         var contentCache = new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase);
 
         TraverseNodes(tree.Nodes, node =>
         {
+            // Reset defaults
             node.ForeColor = System.Drawing.Color.Black;
             node.ToolTipText = "";
 
@@ -487,7 +525,7 @@ compare.Click += (s, e) =>
 
             var f = (dynamic)node.Tag;
 
-            // Only compare repo items that also exist in the model
+            // Only compare repo UDFs that exist in model
             if (existingNow.Contains((string)f.Name))
             {
                 try
@@ -495,7 +533,7 @@ compare.Click += (s, e) =>
                     var apiPath = GetFilePath(f);
                     string code;
 
-                    // Use cache to avoid repeated API calls
+                    // Cache content to avoid repeated GitHub calls
                     if (!contentCache.TryGetValue(apiPath, out code))
                     {
                         var json = client.GetStringAsync(GetApiUrl(apiPath)).Result;
@@ -505,14 +543,17 @@ compare.Click += (s, e) =>
                         contentCache[apiPath] = code;
                     }
 
+                    // Find corresponding function in model
                     var modelFn = Model.Functions
                         .FirstOrDefault(fn => fn.Name.Equals(f.Name, System.StringComparison.OrdinalIgnoreCase));
 
                     if (modelFn != null)
                     {
+                        // Normalize code before comparing
                         var repoCode  = NormalizeLineEndings(code);
                         var modelCode = NormalizeLineEndings(modelFn.Expression);
 
+                        // Color node based on match/diff
                         if (modelCode == repoCode)
                         {
                             node.ForeColor = System.Drawing.Color.Green;
@@ -527,6 +568,7 @@ compare.Click += (s, e) =>
                 }
                 catch (System.Exception ex)
                 {
+                    // Mark node as error
                     node.ForeColor = System.Drawing.Color.DarkOrange;
                     node.ToolTipText = $"Error comparing: {ex.Message}";
                     System.Diagnostics.Debug.WriteLine("Compare error: " + ex);
@@ -539,9 +581,11 @@ compare.Click += (s, e) =>
 
 // ===========================================================================
 // Button: Update GitHub with selected model functions
+// Pushes changes from model → GitHub
 // ===========================================================================
 updateGitHub.Click += (s, e) =>
 {
+    // Collect selected UDFs (both repo + model-only)
     var selected = new System.Collections.Generic.List<dynamic>();
     TraverseNodes(tree.Nodes, node =>
     {
@@ -549,6 +593,7 @@ updateGitHub.Click += (s, e) =>
             selected.Add((dynamic)node.Tag);
     });
 
+    // Abort if none selected
     if (selected.Count == 0)
     {
         System.Windows.Forms.MessageBox.Show("No UDFs selected.");
@@ -566,6 +611,7 @@ updateGitHub.Click += (s, e) =>
                 var path = GetFilePath(f);
                 string sha = null;
 
+                // Fetch existing SHA if file exists
                 var resp = client.GetAsync(GetApiUrl(path)).Result;
                 if (resp.IsSuccessStatusCode)
                 {
@@ -573,18 +619,21 @@ updateGitHub.Click += (s, e) =>
                     sha = (string)obj["sha"];
                 }
 
+                // Find function in model
                 var fn = Model.Functions.FirstOrDefault(x => x.Name.Equals(f.Name, System.StringComparison.OrdinalIgnoreCase));
                 if (fn != null)
                 {
                     var normalized = NormalizeLineEndings(fn.Expression);
 
-                    // Update description from first comment line (if exists)
+                    // Extract description from first comment line (if any)
                     var lines = normalized.Split(new[] { '\n' }, System.StringSplitOptions.None);
                     if (lines.Length > 0 && lines[0].TrimStart().StartsWith("//"))
                         fn.Description = lines[0].Trim().Substring(2).Trim();
 
+                    // Upload normalized expression to GitHub
                     UploadToGitHub(path, normalized, sha);
-                    // Keep model expression normalized for future comparisons
+
+                    // Keep model expression normalized
                     fn.Expression = normalized;
 
                     updated++;
@@ -592,11 +641,13 @@ updateGitHub.Click += (s, e) =>
             }
             catch (System.Exception ex)
             {
+                // Error per UDF
                 System.Diagnostics.Debug.WriteLine("UpdateGitHub error: " + ex);
                 System.Windows.Forms.MessageBox.Show($"Error updating {f.Name}: {ex.Message}");
             }
         }
 
+        // Refresh and show summary
         RefreshTree();
         System.Windows.Forms.MessageBox.Show($"Updated {updated} UDF(s) in GitHub.");
     });
@@ -604,10 +655,12 @@ updateGitHub.Click += (s, e) =>
 
 
 // ===========================================================================
-// Update Model logic: pull UDFs from GitHub into the model
+// Button: Update Model from GitHub
+// Pulls changes from GitHub → model
 // ===========================================================================
 updateModel.Click += (s, e) =>
 {
+    // Collect selected UDFs
     var selected = new System.Collections.Generic.List<dynamic>();
     TraverseNodes(tree.Nodes, node =>
     {
@@ -615,6 +668,7 @@ updateModel.Click += (s, e) =>
             selected.Add((dynamic)node.Tag);
     });
 
+    // Abort if none selected
     if (selected.Count == 0)
     {
         System.Windows.Forms.MessageBox.Show("No UDFs selected.");
@@ -625,11 +679,14 @@ updateModel.Click += (s, e) =>
     {
         int updated = 0;
 
+        // Process each selected function
         foreach (var f in selected)
         {
             try
             {
                 var path = GetFilePath(f);
+
+                // Download file content from GitHub
                 var json = client.GetStringAsync(GetApiUrl(path)).Result;
                 var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
                 var base64 = (string)obj["content"];
@@ -642,6 +699,7 @@ updateModel.Click += (s, e) =>
                 if (lines.Length > 0 && lines[0].TrimStart().StartsWith("//"))
                     desc = lines[0].Trim().Substring(2).Trim();
 
+                // Add or update function in model
                 var fn = Model.Functions.FirstOrDefault(x => x.Name.Equals(f.Name, System.StringComparison.OrdinalIgnoreCase));
                 if (fn == null)
                 {
@@ -658,17 +716,19 @@ updateModel.Click += (s, e) =>
             }
             catch (System.Exception ex)
             {
+                // Error per function
                 System.Diagnostics.Debug.WriteLine("UpdateModel error: " + ex);
                 System.Windows.Forms.MessageBox.Show($"Error updating model with {f.Name}: {ex.Message}");
             }
         }
 
+        // Show summary
         System.Windows.Forms.MessageBox.Show($"Updated {updated} UDF(s) in the Model.");
     });
 };
 
 
 // ===========================================================================
-// Run the form
+// Run the form (main UI loop)
 // ===========================================================================
 form.ShowDialog();
