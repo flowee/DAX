@@ -9,7 +9,7 @@
 // UDF: Returns SVG image for IBCS-styled column chart (Net Sales by Month)
 //
 //  Chart Type: Vertical Column Chart
-//  Intended Usage: Place this measure in a Matrix visual with Months in Columns
+//  Intended Usage: Place this measure in a Matrix visual with the period (e.g. Months) in Columns
 //
 //  Visual Elements per Month:
 //    - Black solid column for Actuals (AC)
