@@ -17,7 +17,7 @@
 //    - White outlined column for Plan (PL)
 //    - Grey triangle for Previous Year (PY)
 //    - Red or Green variance bar (AC/FC vs PL)
-//    - Data label (Net Sales in kUSD)
+//    - Data label (AC or FC values)
 //    - Period label (Month)
 //
 //  Author: Based on styles from Andrzej Leszkiewicz (IBCS® Certified Analyst)
